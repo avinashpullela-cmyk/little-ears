@@ -8,16 +8,16 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:           #faf8f3;
-      --surface:      #ffffff;
-      --primary:      #e07b54;
-      --primary-lt:   #f4a261;
-      --secondary:    #81b29a;
-      --text:         #3d405b;
-      --text-lt:      #6b6f8a;
-      --border:       #e8e4dc;
-      --shadow:       0 2px 12px rgba(61,64,91,.08);
-      --radius:       16px;
+      --bg:         #faf8f3;
+      --surface:    #ffffff;
+      --primary:    #e07b54;
+      --primary-lt: #f4a261;
+      --secondary:  #81b29a;
+      --text:       #3d405b;
+      --text-lt:    #6b6f8a;
+      --border:     #e8e4dc;
+      --shadow:     0 2px 12px rgba(61,64,91,.08);
+      --radius:     16px;
     }
 
     body {
@@ -25,430 +25,522 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding-bottom: 48px;
+      padding-bottom: 52px;
     }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(30,20,10,.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999; padding: 24px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff; border-radius: 24px;
+      padding: 36px 28px; max-width: 360px; width: 100%;
+      text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.18);
+    }
+    .modal-icon  { font-size: 52px; margin-bottom: 16px; }
+    .modal-box h2 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .modal-box p  { font-size: 14px; color: var(--text-lt); line-height: 1.6; margin-bottom: 22px; }
+    .modal-input {
+      width: 100%; padding: 13px 16px;
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 15px; color: var(--text); outline: none; margin-bottom: 14px;
+    }
+    .modal-input:focus { border-color: var(--primary); }
+    .modal-btn {
+      width: 100%; padding: 14px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: background .18s;
+    }
+    .modal-btn:hover { background: var(--primary-lt); }
 
     /* ── Header ── */
     header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-lt) 100%);
-      color: #fff;
-      padding: 28px 20px 22px;
-      text-align: center;
+      color: #fff; padding: 26px 20px 18px; text-align: center;
     }
-    header h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
-    header p  { font-size: 14px; opacity: .82; margin-top: 4px; }
+    header h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
+    header .tagline { font-size: 14px; opacity: .85; margin-top: 3px; }
+    .age-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,.22); border-radius: 16px;
+      padding: 5px 14px; font-size: 13px; font-weight: 600;
+      margin-top: 10px; color: #fff;
+    }
+    .age-chip.hidden { display: none; }
 
     /* ── Layout ── */
     .main { max-width: 620px; margin: 0 auto; padding: 0 16px; }
 
+    /* ── View tabs ── */
+    .view-tabs {
+      display: flex; gap: 0;
+      background: var(--border); border-radius: 14px; padding: 3px;
+      margin: 18px 0 14px;
+    }
+    .view-tab {
+      flex: 1; padding: 11px 0; border: none; background: transparent;
+      border-radius: 12px; font-size: 14px; font-weight: 600;
+      color: var(--text-lt); cursor: pointer; transition: all .18s;
+    }
+    .view-tab.active { background: #fff; color: var(--primary); box-shadow: var(--shadow); }
+
     /* ── Category tabs ── */
     .categories {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 18px 0 4px;
-      scrollbar-width: none;
+      display: flex; gap: 8px; overflow-x: auto;
+      padding: 4px 0 10px; scrollbar-width: none;
     }
     .categories::-webkit-scrollbar { display: none; }
-
     .cat-btn {
-      flex-shrink: 0;
-      padding: 8px 16px;
-      border: 2px solid var(--border);
-      border-radius: 24px;
-      background: var(--surface);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-lt);
-      transition: all .18s;
-      white-space: nowrap;
+      flex-shrink: 0; padding: 8px 16px;
+      border: 2px solid var(--border); border-radius: 24px;
+      background: var(--surface); cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--text-lt);
+      transition: all .18s; white-space: nowrap;
     }
     .cat-btn:hover  { border-color: var(--primary-lt); color: var(--primary); }
     .cat-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
-    /* ── Now Playing card ── */
+    /* ── Now Playing ── */
     .now-playing {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin: 14px 0 8px;
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 16px;
+      background: var(--surface); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 8px;
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px;
     }
-
     .album-art {
-      width: 76px;
-      height: 76px;
-      border-radius: 14px;
+      width: 76px; height: 76px; border-radius: 14px;
       background: linear-gradient(135deg, var(--secondary), var(--primary-lt));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 34px;
-      flex-shrink: 0;
-      position: relative;
-      overflow: hidden;
-      transition: transform .3s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; flex-shrink: 0;
     }
     .album-art.playing { animation: spin-slow 8s linear infinite; }
-
-    @keyframes spin-slow {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
     .song-info { flex: 1; min-width: 0; }
     .song-info h2 {
-      font-size: 17px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 17px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .song-info .artist {
-      font-size: 13px;
-      color: var(--text-lt);
-      margin-top: 3px;
-    }
+    .song-info .artist { font-size: 13px; color: var(--text-lt); margin-top: 3px; }
     .cat-tag {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--text-lt);
-      margin-top: 7px;
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 10px;
+      background: var(--bg); color: var(--text-lt); margin-top: 7px;
     }
 
     /* ── Controls ── */
     .controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0 18px;
+      display: flex; justify-content: center; align-items: center;
+      gap: 12px; padding: 10px 0 16px;
     }
-
     .ctrl-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-lt);
-      padding: 10px;
-      border-radius: 50%;
-      transition: all .18s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: none; border: none; cursor: pointer; color: var(--text-lt);
+      padding: 10px; border-radius: 50%; transition: all .18s;
+      display: flex; align-items: center; justify-content: center;
     }
     .ctrl-btn:hover { color: var(--primary); background: rgba(224,123,84,.1); }
     .ctrl-btn.active { color: var(--primary); }
-
     .play-btn {
-      width: 60px;
-      height: 60px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 60px; height: 60px; background: var(--primary); color: #fff;
+      border: none; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 18px rgba(224,123,84,.40);
-      transition: all .18s;
-      margin: 0 4px;
+      transition: all .18s; margin: 0 4px;
     }
     .play-btn:hover  { background: var(--primary-lt); transform: scale(1.06); }
     .play-btn:active { transform: scale(0.96); }
 
+    /* ── Mode pills ── */
+    .mode-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
+    .mode-pill {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 12px; background: var(--bg); color: var(--text-lt); transition: all .15s;
+    }
+    .mode-pill.on { background: var(--secondary); color: #fff; }
+
     /* ── Song list ── */
     .section-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-lt);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 4px 0 10px;
+      font-size: 12px; font-weight: 700; color: var(--text-lt);
+      text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 10px;
     }
-
     .song-list { display: flex; flex-direction: column; gap: 6px; }
-
     .song-item {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all .15s;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: 12px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      border: 2px solid transparent; transition: all .15s; box-shadow: var(--shadow);
     }
     .song-item:hover  { border-color: var(--primary-lt); }
     .song-item.active { border-color: var(--primary); background: #fff8f5; }
-
     .song-num {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-lt);
-      flex-shrink: 0;
+      width: 30px; height: 30px; border-radius: 8px; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: var(--text-lt); flex-shrink: 0;
     }
     .song-item.active .song-num { background: var(--primary); color: #fff; }
-
     .song-item-info   { flex: 1; min-width: 0; }
     .song-item-title  { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .song-item-artist { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
-
     .song-item-tag {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text-lt);
-      flex-shrink: 0;
-      white-space: nowrap;
+      font-size: 11px; padding: 3px 8px; border-radius: 8px;
+      background: var(--bg); color: var(--text-lt); flex-shrink: 0; white-space: nowrap;
     }
+    .heart-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 20px; padding: 4px 2px; flex-shrink: 0;
+      transition: transform .15s; line-height: 1;
+    }
+    .heart-btn:hover { transform: scale(1.25); }
 
-    /* ── Video player section ── */
+    /* ── Video player ── */
     .player-section {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin: 20px 0 4px;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: var(--radius);
+      padding: 16px; margin: 20px 0 4px; box-shadow: var(--shadow);
     }
-
     .player-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
     }
-    .player-header h3 { font-size: 13px; font-weight: 700; color: var(--text-lt); text-transform: uppercase; letter-spacing: .8px; }
-
+    .player-header h3 {
+      font-size: 12px; font-weight: 700; color: var(--text-lt);
+      text-transform: uppercase; letter-spacing: .8px;
+    }
     .toggle-btn {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--primary);
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 8px;
-      transition: background .15s;
+      font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer;
+      background: none; border: none; padding: 4px 8px;
+      border-radius: 8px; transition: background .15s;
     }
     .toggle-btn:hover { background: rgba(224,123,84,.1); }
-
-    #yt-player { width: 100%; border-radius: 10px; overflow: hidden; }
     #yt-player iframe { width: 100% !important; border-radius: 10px; display: block; }
-
     .audio-tip {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-lt);
-      margin-top: 10px;
-      padding: 9px 14px;
-      background: #f0f7f4;
-      border-radius: 10px;
+      text-align: center; font-size: 12px; color: var(--text-lt);
+      margin-top: 10px; padding: 9px 14px;
+      background: #f0f7f4; border-radius: 10px;
     }
 
-    /* ── Shuffle/repeat indicator ── */
-    .mode-row {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 4px;
+    /* ── Diary view ── */
+    .diary-stats {
+      display: flex; background: var(--surface); border-radius: var(--radius);
+      padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow);
+      align-items: center; justify-content: space-around;
     }
-    .mode-pill {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 12px;
-      background: var(--bg);
-      color: var(--text-lt);
-      transition: all .15s;
+    .stat { text-align: center; }
+    .stat-num { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-lbl { font-size: 11px; font-weight: 600; color: var(--text-lt); margin-top: 4px; text-transform: uppercase; letter-spacing: .6px; }
+    .stat-divider { width: 1px; height: 36px; background: var(--border); }
+
+    .diary-empty {
+      text-align: center; padding: 56px 20px; color: var(--text-lt);
     }
-    .mode-pill.on { background: var(--secondary); color: #fff; }
+    .diary-empty-icon { font-size: 52px; margin-bottom: 18px; }
+    .diary-empty h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .diary-empty p   { font-size: 14px; line-height: 1.7; }
+
+    .diary-period { margin-bottom: 28px; position: relative; }
+    .age-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--primary); color: #fff;
+      border-radius: 20px; padding: 7px 18px;
+      font-size: 14px; font-weight: 700; margin-bottom: 4px;
+    }
+    .age-period-date { font-size: 12px; color: var(--text-lt); margin-bottom: 12px; margin-left: 4px; }
+
+    .diary-entries { display: flex; flex-direction: column; gap: 8px; }
+    .diary-entry {
+      background: #fff; border-radius: 12px; padding: 13px 14px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow); border: 2px solid transparent;
+      transition: border-color .15s;
+    }
+    .diary-entry:hover { border-color: var(--border); }
+    .diary-entry-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--secondary), var(--primary-lt));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .diary-entry-info { flex: 1; min-width: 0; }
+    .diary-entry-title  { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .diary-entry-artist { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
+    .diary-entry-date   { font-size: 11px; color: var(--text-lt); margin-top: 4px; }
+    .diary-play-btn {
+      background: none; border: 2px solid var(--border); border-radius: 8px;
+      cursor: pointer; color: var(--primary); font-size: 16px;
+      padding: 5px 9px; transition: all .15s; flex-shrink: 0;
+    }
+    .diary-play-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .diary-del-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--border); font-size: 16px; padding: 5px;
+      border-radius: 8px; transition: all .15s; flex-shrink: 0; font-weight: 700;
+    }
+    .diary-del-btn:hover { color: #e63946; background: rgba(230,57,70,.08); }
   </style>
 </head>
 <body>
 
+<!-- ── Setup Modal ────────────────────────────────────────────── -->
+<div id="setup-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-icon">🎵</div>
+    <h2>When was Aadritha born?</h2>
+    <p>We'll use this to track her musical journey — what she loved at each age.</p>
+    <input type="date" id="birth-input" class="modal-input">
+    <button class="modal-btn" onclick="saveBirthDate()">Start the journey</button>
+  </div>
+</div>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
 <header>
   <h1>Little Ears</h1>
-  <p>A world of music for Aadritha</p>
+  <p class="tagline">A world of music for Aadritha</p>
+  <div id="age-chip" class="age-chip hidden"></div>
 </header>
 
 <div class="main">
 
-  <!-- Category tabs -->
-  <div class="categories" id="categories"></div>
-
-  <!-- Now Playing -->
-  <div class="now-playing">
-    <div class="album-art" id="album-art">🎵</div>
-    <div class="song-info">
-      <h2 id="np-title">Pick a song to begin</h2>
-      <p class="artist" id="np-artist">Tap any song below</p>
-      <span class="cat-tag" id="np-cat">–</span>
-    </div>
+  <!-- View tabs -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-songs" onclick="setView('songs')">🎵 Songs</button>
+    <button class="view-tab"        id="tab-diary" onclick="setView('diary')">📖 Music Diary</button>
   </div>
 
-  <!-- Controls -->
-  <div class="controls">
-    <!-- Shuffle -->
-    <button class="ctrl-btn" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
-        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-      </svg>
-    </button>
-    <!-- Prev -->
-    <button class="ctrl-btn" onclick="playPrev()" title="Previous">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
-      </svg>
-    </button>
-    <!-- Play/Pause -->
-    <button class="play-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">
-      <svg id="play-icon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    </button>
-    <!-- Next -->
-    <button class="ctrl-btn" onclick="playNext()" title="Next">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 18l8.5-6L6 6v12zm10-12v12h2V6h-2z"/>
-      </svg>
-    </button>
-    <!-- Repeat -->
-    <button class="ctrl-btn" id="btn-repeat" onclick="toggleRepeat()" title="Repeat">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="17 1 21 5 17 9"/>
-        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-        <polyline points="7 23 3 19 7 15"/>
-        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-      </svg>
-    </button>
-  </div>
+  <!-- ── Songs view ──────────────────────────────────────────── -->
+  <div id="view-songs">
+    <div class="categories" id="categories"></div>
 
-  <!-- Mode indicators -->
-  <div class="mode-row">
-    <span class="mode-pill" id="pill-shuffle">Shuffle</span>
-    <span class="mode-pill" id="pill-repeat">Repeat</span>
-  </div>
-
-  <!-- Song list -->
-  <p class="section-label" style="margin-top:18px">Songs</p>
-  <div class="song-list" id="song-list"></div>
-
-  <!-- Embedded YouTube player -->
-  <div class="player-section">
-    <div class="player-header">
-      <h3>Video</h3>
-      <button class="toggle-btn" id="vid-toggle" onclick="toggleVideo()">Hide video</button>
+    <div class="now-playing">
+      <div class="album-art" id="album-art">🎵</div>
+      <div class="song-info">
+        <h2 id="np-title">Pick a song to begin</h2>
+        <p class="artist" id="np-artist">Tap any song below</p>
+        <span class="cat-tag" id="np-cat">–</span>
+      </div>
     </div>
-    <div id="vid-wrapper">
-      <div id="yt-player"></div>
-      <p class="audio-tip">Set your device face-down for audio-only listening</p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+      </button>
+      <button class="ctrl-btn" onclick="playPrev()" title="Previous">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+      </button>
+      <button class="play-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">
+        <svg id="play-icon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="ctrl-btn" onclick="playNext()" title="Next">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm10-12v12h2V6h-2z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="btn-repeat" onclick="toggleRepeat()" title="Repeat">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"/>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </button>
     </div>
+
+    <div class="mode-row">
+      <span class="mode-pill" id="pill-shuffle">Shuffle</span>
+      <span class="mode-pill" id="pill-repeat">Repeat</span>
+    </div>
+
+    <p class="section-label">Songs</p>
+    <div class="song-list" id="song-list"></div>
+
+    <div class="player-section">
+      <div class="player-header">
+        <h3>Video</h3>
+        <button class="toggle-btn" id="vid-toggle" onclick="toggleVideo()">Hide video</button>
+      </div>
+      <div id="vid-wrapper">
+        <div id="yt-player"></div>
+        <p class="audio-tip">Set your device face-down for audio-only listening</p>
+      </div>
+    </div>
+  </div><!-- #view-songs -->
+
+  <!-- ── Diary view ───────────────────────────────────────────── -->
+  <div id="view-diary" style="display:none">
+    <div id="diary-content"></div>
   </div>
 
 </div><!-- .main -->
 
 <script>
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Song & Category Data ────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { id: 'all',      label: '🌍  All'             },
-  { id: 'english',  label: '🎀  Nursery Rhymes'  },
-  { id: 'indian',   label: '🪔  Indian Classical' },
-  { id: 'african',  label: '🌿  African'          },
-  { id: 'japanese', label: '🌸  Japanese'         },
-  { id: 'spanish',  label: '🌺  Spanish/Latin'    },
-  { id: 'celtic',   label: '☘️  Celtic/Irish'     },
+  { id:'all',      label:'🌍  All'              },
+  { id:'english',  label:'🎀  Nursery Rhymes'   },
+  { id:'indian',   label:'🪔  Indian Classical'  },
+  { id:'african',  label:'🌿  African'           },
+  { id:'japanese', label:'🌸  Japanese'          },
+  { id:'spanish',  label:'🌺  Spanish / Latin'   },
+  { id:'celtic',   label:'☘️  Celtic / Irish'    },
 ];
 
-const CAT_EMOJI  = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️' };
-const CAT_LABEL  = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish' };
+const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️' };
+const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish' };
 
 const ALL_SONGS = [
-  // ── English Nursery Rhymes ──────────────────────────────────
-  { id:'9PhtxqKLvVc', title:'The Happy Song',              artist:'Imogen Heap',         cat:'english' },
-  { id:'XqZsoesa55w', title:'Baby Shark',                  artist:'Pinkfong',             cat:'english' },
-  { id:'yWirdnSDsV4', title:'Wheels on the Bus',           artist:'Super Simple Songs',   cat:'english' },
-  { id:'-hqiivkU0fI', title:'Five Little Monkeys',         artist:'Super Simple Songs',   cat:'english' },
-  { id:'dHBT3NdO0mw', title:'Five Little Ducks',           artist:'Super Simple Songs',   cat:'english' },
-  { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star', artist:'Super Simple Songs',   cat:'english' },
-  { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',    artist:'Super Simple Songs',   cat:'english' },
-
-  // ── Indian Classical ────────────────────────────────────────
-  { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',        artist:'M.S. Subbulakshmi',   cat:'indian'  },
-  { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',        artist:'M.S. Subbulakshmi',   cat:'indian'  },
-  { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',   artist:'M.S. Subbulakshmi',   cat:'indian'  },
-
-  // ── African ─────────────────────────────────────────────────
-  { id:'k03znbGf2vo', title:'Thula Sana',                  artist:'Zulu Lullaby',         cat:'african' },
-  { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',       artist:'African Lullabies',    cat:'african' },
-  { id:'10dXj51a_kg', title:'African Lullaby',             artist:'Jazz Lullabies',       cat:'african' },
-
-  // ── Japanese ────────────────────────────────────────────────
-  { id:'Y3cPq5vmXng', title:'Donguri Korokoro (どんぐりころころ)', artist:'Japanese Folk',  cat:'japanese'},
-  { id:'3aYemty3pIc', title:'Japanese Songs Medley',       artist:'Traditional',          cat:'japanese'},
-
-  // ── Spanish / Latin ─────────────────────────────────────────
-  { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',          artist:'Canticos (bilingual)', cat:'spanish' },
-  { id:'PyUkEF1dHW4', title:'Los Pollitos',                artist:'Traditional Spanish',  cat:'spanish' },
-
-  // ── Celtic / Irish ──────────────────────────────────────────
-  { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',       artist:'Irish Lullaby',        cat:'celtic'  },
-  { id:'WHUCX5iy_zk', title:'Toora Loora Looral',          artist:'YOMIMON for Kids',     cat:'celtic'  },
+  // English
+  { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english' },
+  { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english' },
+  { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english' },
+  { id:'-hqiivkU0fI', title:'Five Little Monkeys',          artist:'Super Simple Songs',    cat:'english' },
+  { id:'dHBT3NdO0mw', title:'Five Little Ducks',            artist:'Super Simple Songs',    cat:'english' },
+  { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',  artist:'Super Simple Songs',    cat:'english' },
+  { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',     artist:'Super Simple Songs',    cat:'english' },
+  // Indian Classical
+  { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',         artist:'M.S. Subbulakshmi',    cat:'indian'  },
+  { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',         artist:'M.S. Subbulakshmi',    cat:'indian'  },
+  { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',    artist:'M.S. Subbulakshmi',    cat:'indian'  },
+  // African
+  { id:'k03znbGf2vo', title:'Thula Sana',                   artist:'Zulu Lullaby',          cat:'african' },
+  { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',        artist:'African Lullabies',     cat:'african' },
+  { id:'10dXj51a_kg', title:'African Lullaby',              artist:'Jazz Lullabies',        cat:'african' },
+  // Japanese
+  { id:'Y3cPq5vmXng', title:'Donguri Korokoro',             artist:'どんぐりころころ',      cat:'japanese'},
+  { id:'3aYemty3pIc', title:'Japanese Songs Medley',        artist:'Traditional',           cat:'japanese'},
+  // Spanish
+  { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',           artist:'Canticos (bilingual)',  cat:'spanish' },
+  { id:'PyUkEF1dHW4', title:'Los Pollitos',                 artist:'Traditional Spanish',   cat:'spanish' },
+  // Celtic
+  { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',        artist:'Irish Lullaby',         cat:'celtic'  },
+  { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'  },
 ];
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// ─── Storage Keys ────────────────────────────────────────────────────────────
 
-let player       = null;
-let playerReady  = false;
-let currentIdx   = 0;
-let isPlaying    = false;
-let isShuffle    = false;
-let isRepeat     = false;
-let currentCat   = 'all';
-let songs        = [...ALL_SONGS];
-let vidHidden    = false;
+const KEY_BIRTH = 'le_birthdate';
+const KEY_DIARY = 'le_diary';
 
-// ─── Render helpers ───────────────────────────────────────────────────────────
+// ─── Player State ─────────────────────────────────────────────────────────────
+
+let player      = null;
+let playerReady = false;
+let currentIdx  = 0;
+let isPlaying   = false;
+let isShuffle   = false;
+let isRepeat    = false;
+let currentCat  = 'all';
+let songs       = [...ALL_SONGS];
+let vidHidden   = false;
+let currentView = 'songs';
+
+// ─── Age Helpers ──────────────────────────────────────────────────────────────
+
+function getBirthDate() { return localStorage.getItem(KEY_BIRTH); }
+
+function getAgeMonths() {
+  const bd = getBirthDate();
+  if (!bd) return null;
+  const birth = new Date(bd);
+  const now   = new Date();
+  let months  = (now.getFullYear() - birth.getFullYear()) * 12
+               + (now.getMonth()   - birth.getMonth());
+  if (now.getDate() < birth.getDate()) months--;
+  return Math.max(0, months);
+}
+
+function ageLabel(months) {
+  if (months < 12) return `${months} month${months !== 1 ? 's' : ''}`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (m === 0) return `${y} year${y !== 1 ? 's' : ''}`;
+  return `${y} yr ${m} mo`;
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+// ─── Diary Storage ────────────────────────────────────────────────────────────
+
+function getDiary() {
+  try { return JSON.parse(localStorage.getItem(KEY_DIARY) || '[]'); }
+  catch { return []; }
+}
+
+function saveDiary(entries) {
+  localStorage.setItem(KEY_DIARY, JSON.stringify(entries));
+}
+
+function isLikedAtCurrentAge(videoId) {
+  const m = getAgeMonths();
+  if (m === null) return false;
+  return getDiary().some(e => e.videoId === videoId && e.ageMonths === m);
+}
+
+function toggleLike(songIdx) {
+  const song = songs[songIdx];
+  if (!song) return;
+
+  const m = getAgeMonths();
+  if (m === null) {
+    document.getElementById('setup-modal').classList.remove('hidden');
+    return;
+  }
+
+  let entries = getDiary();
+  const existing = entries.findIndex(e => e.videoId === song.id && e.ageMonths === m);
+
+  if (existing >= 0) {
+    entries.splice(existing, 1);
+  } else {
+    entries.push({
+      videoId:   song.id,
+      title:     song.title,
+      artist:    song.artist,
+      cat:       song.cat,
+      ageMonths: m,
+      ageLabel:  ageLabel(m),
+      likedAt:   new Date().toISOString(),
+    });
+  }
+
+  saveDiary(entries);
+  renderSongList();
+  if (currentView === 'diary') renderDiaryView();
+}
+
+function deleteDiaryEntry(videoId, ageMonths) {
+  saveDiary(getDiary().filter(e => !(e.videoId === videoId && e.ageMonths === ageMonths)));
+  renderDiaryView();
+  renderSongList();
+}
+
+// ─── Render: Songs View ───────────────────────────────────────────────────────
 
 function renderCategories() {
   document.getElementById('categories').innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-btn ${c.id === currentCat ? 'active' : ''}"
-             onclick="setCategory('${c.id}')">${c.label}</button>`
+    `<button class="cat-btn ${c.id === currentCat ? 'active' : ''}" onclick="setCategory('${c.id}')">${c.label}</button>`
   ).join('');
 }
 
 function renderSongList() {
-  document.getElementById('song-list').innerHTML = songs.map((s, i) => `
-    <div class="song-item ${i === currentIdx ? 'active' : ''}" onclick="selectSong(${i})">
-      <div class="song-num">${i === currentIdx ? (isPlaying ? '▶' : '❚❚') : i + 1}</div>
-      <div class="song-item-info">
-        <div class="song-item-title">${s.title}</div>
-        <div class="song-item-artist">${s.artist}</div>
-      </div>
-      <span class="song-item-tag">${CAT_EMOJI[s.cat] || '🎵'} ${CAT_LABEL[s.cat] || s.cat}</span>
-    </div>
-  `).join('');
+  document.getElementById('song-list').innerHTML = songs.map((s, i) => {
+    const liked = isLikedAtCurrentAge(s.id);
+    return `
+      <div class="song-item ${i === currentIdx ? 'active' : ''}" onclick="selectSong(${i})">
+        <div class="song-num">${i === currentIdx ? (isPlaying ? '▶' : '❚❚') : i + 1}</div>
+        <div class="song-item-info">
+          <div class="song-item-title">${s.title}</div>
+          <div class="song-item-artist">${s.artist}</div>
+        </div>
+        <span class="song-item-tag">${CAT_EMOJI[s.cat] || '🎵'} ${CAT_LABEL[s.cat] || s.cat}</span>
+        <button class="heart-btn" onclick="event.stopPropagation(); toggleLike(${i})"
+                title="${liked ? 'Remove from diary' : 'Add to diary at current age'}">${liked ? '❤️' : '🤍'}</button>
+      </div>`;
+  }).join('');
 }
 
 function renderNowPlaying() {
@@ -462,7 +554,6 @@ function renderNowPlaying() {
 }
 
 function renderPlayBtn() {
-  // Pause icon when playing, play icon when paused
   document.getElementById('play-icon').innerHTML = isPlaying
     ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
     : '<path d="M8 5v14l11-7z"/>';
@@ -475,13 +566,128 @@ function renderModes() {
   document.getElementById('btn-repeat').classList.toggle('active', isRepeat);
 }
 
-function render() {
-  renderNowPlaying();
-  renderPlayBtn();
+function render() { renderNowPlaying(); renderPlayBtn(); renderSongList(); }
+
+// ─── Render: Diary View ───────────────────────────────────────────────────────
+
+function renderDiaryView() {
+  const el      = document.getElementById('diary-content');
+  const entries = getDiary();
+
+  if (entries.length === 0) {
+    el.innerHTML = `
+      <div class="diary-empty">
+        <div class="diary-empty-icon">📖</div>
+        <h3>The diary is empty</h3>
+        <p>Tap the 🤍 on any song while playing<br>to save it to Aadritha's music diary.<br><br>Her age is recorded automatically so you<br>can look back at what she loved over time.</p>
+      </div>`;
+    return;
+  }
+
+  // Stats
+  const totalSongs = entries.length;
+  const ageMilestones = new Set(entries.map(e => e.ageMonths)).size;
+  const catCounts = {};
+  entries.forEach(e => { catCounts[e.cat] = (catCounts[e.cat] || 0) + 1; });
+  const topCat = Object.entries(catCounts).sort((a,b) => b[1]-a[1])[0];
+  const topCatLabel = topCat ? `${CAT_EMOJI[topCat[0]] || '🎵'} ${CAT_LABEL[topCat[0]] || topCat[0]}` : '–';
+
+  // Group by ageMonths, newest first
+  const grouped = {};
+  entries.forEach(e => {
+    if (!grouped[e.ageMonths]) grouped[e.ageMonths] = { label: e.ageLabel, entries: [] };
+    grouped[e.ageMonths].entries.push(e);
+  });
+  const sortedAges = Object.keys(grouped).map(Number).sort((a, b) => b - a);
+
+  el.innerHTML = `
+    <div class="diary-stats">
+      <div class="stat">
+        <div class="stat-num">${totalSongs}</div>
+        <div class="stat-lbl">songs loved</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num">${ageMilestones}</div>
+        <div class="stat-lbl">age milestone${ageMilestones !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num" style="font-size:18px">${topCatLabel}</div>
+        <div class="stat-lbl">top category</div>
+      </div>
+    </div>
+
+    ${sortedAges.map(age => {
+      const g = grouped[age];
+      const firstDate = g.entries.slice().sort((a,b) => new Date(a.likedAt)-new Date(b.likedAt))[0];
+      const monthYear = new Date(firstDate.likedAt).toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+      return `
+        <div class="diary-period">
+          <div class="age-badge">🎂 ${g.label}</div>
+          <div class="age-period-date">${monthYear}</div>
+          <div class="diary-entries">
+            ${g.entries.map(entry => `
+              <div class="diary-entry">
+                <div class="diary-entry-icon">${CAT_EMOJI[entry.cat] || '🎵'}</div>
+                <div class="diary-entry-info">
+                  <div class="diary-entry-title">${entry.title}</div>
+                  <div class="diary-entry-artist">${entry.artist}</div>
+                  <div class="diary-entry-date">Saved on ${formatDate(entry.likedAt)}</div>
+                </div>
+                <button class="diary-play-btn" onclick="playFromDiary('${entry.videoId}')" title="Play">▶</button>
+                <button class="diary-del-btn"  onclick="deleteDiaryEntry('${entry.videoId}', ${entry.ageMonths})" title="Remove">✕</button>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }).join('')}`;
+}
+
+// ─── Diary: Play from diary ───────────────────────────────────────────────────
+
+function playFromDiary(videoId) {
+  setCategory('all');
+  setView('songs');
+  const idx = songs.findIndex(s => s.id === videoId);
+  if (idx >= 0) selectSong(idx);
+}
+
+// ─── View Switching ───────────────────────────────────────────────────────────
+
+function setView(view) {
+  currentView = view;
+  document.getElementById('view-songs').style.display = view === 'songs' ? 'block' : 'none';
+  document.getElementById('view-diary').style.display = view === 'diary' ? 'block' : 'none';
+  document.getElementById('tab-songs').classList.toggle('active', view === 'songs');
+  document.getElementById('tab-diary').classList.toggle('active', view === 'diary');
+  if (view === 'diary') renderDiaryView();
+}
+
+// ─── Age Chip ─────────────────────────────────────────────────────────────────
+
+function updateAgeChip() {
+  const m    = getAgeMonths();
+  const chip = document.getElementById('age-chip');
+  if (m !== null) {
+    chip.textContent = `👶 Aadritha · ${ageLabel(m)} old`;
+    chip.classList.remove('hidden');
+  } else {
+    chip.classList.add('hidden');
+  }
+}
+
+// ─── Setup ────────────────────────────────────────────────────────────────────
+
+function saveBirthDate() {
+  const val = document.getElementById('birth-input').value;
+  if (!val) { alert('Please pick a date.'); return; }
+  localStorage.setItem(KEY_BIRTH, val);
+  document.getElementById('setup-modal').classList.add('hidden');
+  updateAgeChip();
   renderSongList();
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
+// ─── Song Actions ─────────────────────────────────────────────────────────────
 
 function setCategory(cat) {
   currentCat = cat;
@@ -511,18 +717,15 @@ function togglePlay() {
   } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED) {
     player.playVideo();
   } else {
-    // Unstarted — load first song
     loadAndPlay(songs[currentIdx].id);
   }
 }
 
 function playNext() {
-  if (songs.length === 0) return;
+  if (!songs.length) return;
   if (isShuffle) {
-    let next;
-    do { next = Math.floor(Math.random() * songs.length); }
-    while (songs.length > 1 && next === currentIdx);
-    currentIdx = next;
+    let n; do { n = Math.floor(Math.random() * songs.length); } while (songs.length > 1 && n === currentIdx);
+    currentIdx = n;
   } else {
     currentIdx = (currentIdx + 1) % songs.length;
   }
@@ -530,7 +733,7 @@ function playNext() {
 }
 
 function playPrev() {
-  if (songs.length === 0) return;
+  if (!songs.length) return;
   currentIdx = (currentIdx - 1 + songs.length) % songs.length;
   loadAndPlay(songs[currentIdx].id);
 }
@@ -546,7 +749,7 @@ function toggleVideo() {
 
 // ─── YouTube IFrame API ───────────────────────────────────────────────────────
 
-(function loadYTScript() {
+(function() {
   var tag = document.createElement('script');
   tag.src = 'https://www.youtube.com/iframe_api';
   document.head.appendChild(tag);
@@ -554,31 +757,16 @@ function toggleVideo() {
 
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('yt-player', {
-    height: '210',
-    width:  '100%',
-    playerVars: {
-      autoplay:        0,
-      controls:        1,
-      rel:             0,
-      modestbranding:  1,
-      playsinline:     1,
-    },
+    height: '210', width: '100%',
+    playerVars: { autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
     events: {
-      onReady: function() {
-        playerReady = true;
-      },
+      onReady: function() { playerReady = true; },
       onStateChange: function(e) {
-        if (e.data === YT.PlayerState.PLAYING) {
-          isPlaying = true;  render();
-        } else if (e.data === YT.PlayerState.PAUSED) {
-          isPlaying = false; render();
-        } else if (e.data === YT.PlayerState.ENDED) {
-          if (isRepeat) {
-            player.seekTo(0);
-            player.playVideo();
-          } else {
-            playNext();
-          }
+        if (e.data === YT.PlayerState.PLAYING) { isPlaying = true;  render(); }
+        if (e.data === YT.PlayerState.PAUSED)  { isPlaying = false; render(); }
+        if (e.data === YT.PlayerState.ENDED) {
+          if (isRepeat) { player.seekTo(0); player.playVideo(); }
+          else playNext();
         }
       },
     },
@@ -587,9 +775,20 @@ function onYouTubeIframeAPIReady() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
-renderCategories();
-renderModes();
-render();
+(function init() {
+  // Set max date on birth input to today
+  document.getElementById('birth-input').max = new Date().toISOString().split('T')[0];
+
+  // Show setup modal only if birth date not saved
+  if (!getBirthDate()) {
+    document.getElementById('setup-modal').classList.remove('hidden');
+  }
+
+  updateAgeChip();
+  renderCategories();
+  renderModes();
+  render();
+})();
 </script>
 </body>
 </html>
