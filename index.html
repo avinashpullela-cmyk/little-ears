@@ -679,7 +679,8 @@
       </div>
       <div id="vid-wrapper">
         <div id="yt-player"></div>
-        <p class="audio-tip">Set your device face-down for audio-only listening</p>
+        <p class="audio-tip" id="audio-tip">Set your device face-down for audio-only listening</p>
+        <div class="no-video-msg" id="no-video-msg" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -1438,17 +1439,25 @@ function setCategory(cat) {
 function selectSong(idx) {
   currentIdx = idx;
   const vid = getVideoId(songs[idx]);
+  const ytEl  = document.getElementById('yt-player');
+  const tip   = document.getElementById('audio-tip');
+  const nvMsg = document.getElementById('no-video-msg');
+
   if (vid) {
+    // Show player, hide "no video" overlay — never touch innerHTML
+    if (ytEl)  ytEl.style.display  = '';
+    if (tip)   tip.style.display   = '';
+    if (nvMsg) nvMsg.style.display = 'none';
     loadAndPlay(vid);
-    // Swap out "No video" message for the player
-    document.getElementById('vid-wrapper').innerHTML =
-      '<div id="yt-player"></div><p class="audio-tip">Set your device face-down for audio-only listening</p>';
-    if (playerReady) player.loadVideoById(vid);
   } else {
     isPlaying = false;
-    document.getElementById('vid-wrapper').innerHTML =
-      `<div class="no-video-msg">🎵 <strong>${songs[idx].title}</strong> has no YouTube link.<br>
-       You can still ❤️ it to save it in the diary.</div>`;
+    // Hide player iframe, show "no video" message
+    if (ytEl)  ytEl.style.display  = 'none';
+    if (tip)   tip.style.display   = 'none';
+    if (nvMsg) {
+      nvMsg.innerHTML = `🎵 <strong>${songs[idx].title}</strong> has no YouTube link.<br>You can still ❤️ it to save it in the diary.`;
+      nvMsg.style.display = '';
+    }
     render();
   }
 }
