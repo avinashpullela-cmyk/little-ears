@@ -231,6 +231,36 @@
     }
     .add-song-btn:hover { background: var(--primary-lt); }
 
+    /* ── Search bar ── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 15px; pointer-events: none; opacity: .45;
+    }
+    .search-input {
+      width: 100%; padding: 11px 38px 11px 38px;
+      border: 2px solid var(--border); border-radius: 24px;
+      font-size: 14px; color: var(--text); background: var(--surface);
+      outline: none; transition: border-color .18s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-clear {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: var(--border); border: none; border-radius: 50%;
+      width: 20px; height: 20px; font-size: 11px; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      color: var(--text-lt); font-weight: 700; line-height: 1;
+    }
+    .search-clear.visible { display: flex; }
+    .search-empty {
+      text-align: center; padding: 32px 16px;
+      font-size: 14px; color: var(--text-lt);
+    }
+    .search-empty span { font-size: 32px; display: block; margin-bottom: 8px; }
+
     /* ── Song list ── */
     .song-list { display: flex; flex-direction: column; gap: 6px; }
     .song-item {
@@ -533,6 +563,15 @@
       <p class="section-label">Songs</p>
       <button class="add-song-btn" onclick="openAddModal()">＋ Add a song</button>
     </div>
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="search-input" class="search-input" type="search"
+             placeholder="Search songs, artists, categories…"
+             autocomplete="off" oninput="onSearch(this.value)">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear">✕</button>
+    </div>
+
     <div class="song-list" id="song-list"></div>
 
     <div class="player-section">
@@ -622,9 +661,10 @@ let currentIdx  = 0;
 let isPlaying   = false;
 let isShuffle   = false;
 let isRepeat    = false;
-let currentCat  = 'all';
-let songs       = [];        // currently visible (filtered) list
-let vidHidden   = false;
+let currentCat    = 'all';
+let songs         = [];   // currently visible (filtered) list
+let searchQuery   = '';   // active search string
+let vidHidden     = false;
 let currentView = 'songs';
 
 // ─── Song helpers ────────────────────────────────────────────────────────────
@@ -640,7 +680,37 @@ function getVideoId(song) {
 
 function refreshFilteredSongs() {
   const base = getBaseSongs();
-  songs = currentCat === 'all' ? base : base.filter(s => s.cat === currentCat);
+  let filtered = currentCat === 'all' ? base : base.filter(s => s.cat === currentCat);
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(s =>
+      s.title.toLowerCase().includes(q)  ||
+      s.artist.toLowerCase().includes(q) ||
+      (CAT_LABEL[s.cat] || '').toLowerCase().includes(q) ||
+      (s.note || '').toLowerCase().includes(q)
+    );
+  }
+  songs = filtered;
+}
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+function onSearch(val) {
+  searchQuery = val.trim();
+  document.getElementById('search-clear').classList.toggle('visible', searchQuery.length > 0);
+  currentIdx = 0;
+  refreshFilteredSongs();
+  renderSongList();
+}
+
+function clearSearch() {
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
+  currentIdx = 0;
+  refreshFilteredSongs();
+  renderSongList();
+  document.getElementById('search-input').focus();
 }
 
 // ─── YouTube URL parser ───────────────────────────────────────────────────────
@@ -935,6 +1005,12 @@ function renderCategories() {
 }
 
 function renderSongList() {
+  if (songs.length === 0 && searchQuery) {
+    document.getElementById('song-list').innerHTML =
+      `<div class="search-empty"><span>🎵</span>No songs match "<strong>${searchQuery}</strong>"<br>
+       <small>Try a different title, artist, or category</small></div>`;
+    return;
+  }
   document.getElementById('song-list').innerHTML = songs.map((s, i) => {
     const liked   = isLikedAtCurrentAge(s.id);
     const vid     = getVideoId(s);
@@ -1070,8 +1146,12 @@ function setView(view) {
 
 function setCategory(cat) {
   currentCat = cat;
-  refreshFilteredSongs();
+  // Clear search when switching category tabs
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
   currentIdx = 0;
+  refreshFilteredSongs();
   renderCategories();
   render();
 }
