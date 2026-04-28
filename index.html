@@ -26,6 +26,8 @@
       --primary:    #e07b54;
       --primary-lt: #f4a261;
       --secondary:  #81b29a;
+      --custom:     #7b5ea7;
+      --custom-bg:  #f0edf8;
       --text:       #3d405b;
       --text-lt:    #6b6f8a;
       --border:     #e8e4dc;
@@ -46,36 +48,54 @@
       position: fixed; inset: 0;
       background: rgba(30,20,10,.6);
       display: flex; align-items: center; justify-content: center;
-      z-index: 999; padding: 24px;
+      z-index: 999; padding: 20px;
       backdrop-filter: blur(6px);
+      overflow-y: auto;
     }
     .modal-overlay.hidden { display: none; }
     .modal-box {
       background: #fff; border-radius: 24px;
-      padding: 36px 28px; max-width: 380px; width: 100%;
+      padding: 32px 26px; max-width: 400px; width: 100%;
       text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.18);
+      margin: auto;
     }
-    .modal-icon { font-size: 52px; margin-bottom: 16px; line-height: 1; }
-    .modal-box h2 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-    .modal-box p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; margin-bottom: 22px; }
-    .modal-input {
-      width: 100%; padding: 13px 16px;
+    .modal-box.left { text-align: left; }
+    .modal-icon { font-size: 48px; margin-bottom: 14px; line-height: 1; }
+    .modal-box h2  { font-size: 21px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .modal-box > p { font-size: 13px; color: var(--text-lt); line-height: 1.65; margin-bottom: 20px; }
+    .modal-err     { font-size: 13px; color: #e63946; margin-bottom: 10px; min-height: 18px; }
+
+    /* Form fields inside modal */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--text-lt); text-transform: uppercase;
+      letter-spacing: .7px; margin-bottom: 6px;
+    }
+    .form-label span { color: var(--primary); } /* asterisk */
+    .modal-input, .modal-select {
+      width: 100%; padding: 12px 14px;
       border: 2px solid var(--border); border-radius: 12px;
-      font-size: 16px; color: var(--text); outline: none;
-      margin-bottom: 10px; text-align: center; letter-spacing: .5px;
+      font-size: 15px; color: var(--text); outline: none;
+      background: #fff; appearance: none;
     }
-    .modal-input:focus { border-color: var(--primary); }
-    .modal-hint { font-size: 12px; color: var(--text-lt); margin-bottom: 18px; }
-    .modal-err  { font-size: 13px; color: #e63946; margin-bottom: 12px; min-height: 18px; }
+    .modal-input:focus, .modal-select:focus { border-color: var(--primary); }
+    .modal-hint { font-size: 11px; color: var(--text-lt); margin-top: 5px; line-height: 1.5; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
     .modal-btn {
-      width: 100%; padding: 15px;
+      flex: 1; padding: 14px;
       background: var(--primary); color: #fff;
       border: none; border-radius: 12px;
-      font-size: 16px; font-weight: 700; cursor: pointer;
+      font-size: 15px; font-weight: 700; cursor: pointer;
       transition: background .18s;
     }
     .modal-btn:hover    { background: var(--primary-lt); }
     .modal-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .modal-btn.secondary {
+      background: var(--border); color: var(--text-lt);
+    }
+    .modal-btn.secondary:hover { background: #d8d4cc; }
 
     /* Sync status dot */
     .sync-dot {
@@ -193,11 +213,25 @@
     }
     .mode-pill.on { background: var(--secondary); color: #fff; }
 
-    /* ── Song list ── */
+    /* ── Section header row ── */
+    .section-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 16px 0 10px;
+    }
     .section-label {
       font-size: 12px; font-weight: 700; color: var(--text-lt);
-      text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 10px;
+      text-transform: uppercase; letter-spacing: 1px;
     }
+    .add-song-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 20px; padding: 7px 14px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: background .18s; white-space: nowrap;
+    }
+    .add-song-btn:hover { background: var(--primary-lt); }
+
+    /* ── Song list ── */
     .song-list { display: flex; flex-direction: column; gap: 6px; }
     .song-item {
       background: var(--surface); border-radius: 12px; padding: 12px 14px;
@@ -206,6 +240,8 @@
     }
     .song-item:hover  { border-color: var(--primary-lt); }
     .song-item.active { border-color: var(--primary); background: #fff8f5; }
+    .song-item.no-video { opacity: .85; }
+
     .song-num {
       width: 30px; height: 30px; border-radius: 8px; background: var(--bg);
       display: flex; align-items: center; justify-content: center;
@@ -214,17 +250,30 @@
     .song-item.active .song-num { background: var(--primary); color: #fff; }
     .song-item-info   { flex: 1; min-width: 0; }
     .song-item-title  { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .song-item-artist { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
+    .song-item-meta   { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+    .song-item-artist { font-size: 12px; color: var(--text-lt); }
+    .song-item-note   { font-size: 11px; color: var(--text-lt); font-style: italic; }
+
     .song-item-tag {
-      font-size: 11px; padding: 3px 8px; border-radius: 8px;
+      font-size: 11px; padding: 2px 8px; border-radius: 8px;
       background: var(--bg); color: var(--text-lt); flex-shrink: 0; white-space: nowrap;
     }
-    .heart-btn {
+    .song-item-tag.custom-tag {
+      background: var(--custom-bg); color: var(--custom);
+    }
+    .no-video-tag {
+      font-size: 11px; padding: 2px 8px; border-radius: 8px;
+      background: #fff3cd; color: #856404; flex-shrink: 0; white-space: nowrap;
+    }
+
+    .heart-btn, .delete-song-btn {
       background: none; border: none; cursor: pointer;
-      font-size: 20px; padding: 4px 2px; flex-shrink: 0;
+      font-size: 18px; padding: 4px 3px; flex-shrink: 0;
       transition: transform .15s; line-height: 1;
     }
-    .heart-btn:hover { transform: scale(1.25); }
+    .heart-btn:hover       { transform: scale(1.25); }
+    .delete-song-btn       { font-size: 14px; color: var(--border); }
+    .delete-song-btn:hover { color: #e63946; transform: scale(1.1); }
 
     /* ── Video player ── */
     .player-section {
@@ -249,6 +298,10 @@
       text-align: center; font-size: 12px; color: var(--text-lt);
       margin-top: 10px; padding: 9px 14px;
       background: #f0f7f4; border-radius: 10px;
+    }
+    .no-video-msg {
+      text-align: center; padding: 20px; color: var(--text-lt);
+      font-size: 13px; background: var(--bg); border-radius: 10px;
     }
 
     /* ── Diary ── */
@@ -292,6 +345,7 @@
     .diary-entry-info { flex: 1; min-width: 0; }
     .diary-entry-title  { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .diary-entry-artist { font-size: 12px; color: var(--text-lt); margin-top: 2px; }
+    .diary-entry-note   { font-size: 11px; color: var(--custom); margin-top: 2px; font-style: italic; }
     .diary-entry-date   { font-size: 11px; color: var(--text-lt); margin-top: 4px; }
     .diary-play-btn {
       background: none; border: 2px solid var(--border); border-radius: 8px;
@@ -299,6 +353,7 @@
       padding: 5px 9px; transition: all .15s; flex-shrink: 0;
     }
     .diary-play-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .diary-play-btn:disabled { opacity: .4; cursor: default; }
     .diary-del-btn {
       background: none; border: none; cursor: pointer;
       color: var(--border); font-size: 16px; padding: 5px;
@@ -306,7 +361,7 @@
     }
     .diary-del-btn:hover { color: #e63946; background: rgba(230,57,70,.08); }
 
-    /* ── Install banner (shown on iOS) ── */
+    /* ── iOS install banner ── */
     .install-banner {
       background: var(--primary); color: #fff;
       padding: 12px 16px; text-align: center;
@@ -314,7 +369,6 @@
       display: none;
     }
     .install-banner.show { display: block; }
-    .install-banner strong { font-weight: 700; }
     .install-banner .dismiss {
       background: none; border: none; color: rgba(255,255,255,.7);
       font-size: 18px; cursor: pointer; float: right; margin-top: -2px;
@@ -326,35 +380,91 @@
 <!-- ── iOS Install Banner ─────────────────────────────────────── -->
 <div class="install-banner" id="install-banner">
   <button class="dismiss" onclick="this.parentElement.classList.remove('show')">✕</button>
-  Install this app: tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
+  Install: tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
 </div>
 
-<!-- ── Modal 1: Family Code ───────────────────────────────────── -->
+<!-- ── Modal: Family Code ─────────────────────────────────────── -->
 <div id="modal-code" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-icon">👨‍👩‍👧</div>
     <h2>Join your family's diary</h2>
     <p>Enter the shared family code to sync Aadritha's music diary across everyone's devices.<br><br>
-       First time? Make up any code and share it with family — like <em>aadritha2024</em>.</p>
+       First time? Make up any code and share it — like <em>aadritha2024</em>.</p>
     <input id="code-input" class="modal-input" type="text"
            placeholder="e.g. aadritha2024"
            autocapitalize="none" autocorrect="off" spellcheck="false"
+           style="text-align:center;margin-bottom:10px"
            onkeydown="if(event.key==='Enter') submitCode()">
     <div class="modal-err" id="code-err"></div>
     <button id="code-btn" class="modal-btn" onclick="submitCode()">Join family</button>
   </div>
 </div>
 
-<!-- ── Modal 2: Birth Date ────────────────────────────────────── -->
+<!-- ── Modal: Birth Date ──────────────────────────────────────── -->
 <div id="modal-birth" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-icon">🎵</div>
     <h2>When was Aadritha born?</h2>
-    <p>We'll use this to track what music she loved at each age — automatically.</p>
+    <p>We'll use this to track what she loved at each age — automatically.</p>
     <input id="birth-input" class="modal-input" type="date"
+           style="text-align:center;margin-bottom:10px"
            onkeydown="if(event.key==='Enter') saveBirthDate()">
     <div class="modal-err" id="birth-err"></div>
     <button class="modal-btn" onclick="saveBirthDate()">Start the journey</button>
+  </div>
+</div>
+
+<!-- ── Modal: Add Song ────────────────────────────────────────── -->
+<div id="modal-add" class="modal-overlay hidden">
+  <div class="modal-box left">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="modal-icon">🎶</div>
+      <h2>Add a song</h2>
+      <p>Add any song Aadritha loves — with or without a YouTube link.</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Song title <span>*</span></label>
+      <input id="add-title" class="modal-input" type="text" placeholder="e.g. Johny Johny Yes Papa">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Artist / Channel <span>*</span></label>
+      <input id="add-artist" class="modal-input" type="text" placeholder="e.g. LooLoo Kids">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category <span>*</span></label>
+      <select id="add-cat" class="modal-select">
+        <option value="english">🎀  Nursery Rhymes</option>
+        <option value="indian">🪔  Indian Classical</option>
+        <option value="african">🌿  African</option>
+        <option value="japanese">🌸  Japanese</option>
+        <option value="spanish">🌺  Spanish / Latin</option>
+        <option value="celtic">☘️  Celtic / Irish</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">YouTube link or video ID (optional)</label>
+      <input id="add-youtube" class="modal-input" type="url"
+             placeholder="https://youtube.com/watch?v=...">
+      <p class="modal-hint">Paste the full YouTube URL, a youtu.be link, or just the 11-character video ID</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input id="add-note" class="modal-input" type="text"
+             placeholder="e.g. Grandma added this at the park">
+      <p class="modal-hint">A personal memory about when or why she loved this song</p>
+    </div>
+
+    <div class="modal-err" id="add-err"></div>
+
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeAddModal()">Cancel</button>
+      <button class="modal-btn" id="add-btn" onclick="submitAddSong()">Add Song</button>
+    </div>
   </div>
 </div>
 
@@ -419,15 +529,15 @@
       <span class="mode-pill" id="pill-repeat">Repeat</span>
     </div>
 
-    <p class="section-label">Songs</p>
+    <div class="section-row">
+      <p class="section-label">Songs</p>
+      <button class="add-song-btn" onclick="openAddModal()">＋ Add a song</button>
+    </div>
     <div class="song-list" id="song-list"></div>
 
     <div class="player-section">
       <div class="player-header">
-        <h3>
-          <span class="sync-dot synced" id="sync-dot"></span>
-          Video
-        </h3>
+        <h3><span class="sync-dot synced" id="sync-dot"></span>Video</h3>
         <button class="toggle-btn" id="vid-toggle" onclick="toggleVideo()">Hide video</button>
       </div>
       <div id="vid-wrapper">
@@ -445,7 +555,7 @@
 </div>
 
 <script>
-// ─── Firebase Config ─────────────────────────────────────────────────────────
+// ─── Firebase ────────────────────────────────────────────────────────────────
 
 firebase.initializeApp({
   apiKey:            'AIzaSyCRmn3fT0oVjtfZ5iNHhAU34G07eIeUnqs',
@@ -457,7 +567,7 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-// ─── Song & Category Data ─────────────────────────────────────────────────────
+// ─── Static Song List ────────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { id:'all',      label:'🌍  All'              },
@@ -471,7 +581,7 @@ const CATEGORIES = [
 const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️' };
 const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish' };
 
-const ALL_SONGS = [
+const STATIC_SONGS = [
   { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
   { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english'  },
   { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english'  },
@@ -493,17 +603,18 @@ const ALL_SONGS = [
   { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'   },
 ];
 
-// ─── Storage Keys ─────────────────────────────────────────────────────────────
+// ─── Storage Keys ────────────────────────────────────────────────────────────
 
-const KEY_CODE  = 'le_family_code';
-const KEY_BIRTH = 'le_birthdate';
-const KEY_DIARY = 'le_diary';
+const KEY_CODE   = 'le_family_code';
+const KEY_BIRTH  = 'le_birthdate';
+const KEY_DIARY  = 'le_diary';
+const KEY_CUSTOM = 'le_custom_songs';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
-let familyCode    = null;
+let familyCode     = null;
 let unsubFirestore = null;
-let isSyncing     = false;
+let CUSTOM_SONGS   = [];
 
 let player      = null;
 let playerReady = false;
@@ -512,13 +623,131 @@ let isPlaying   = false;
 let isShuffle   = false;
 let isRepeat    = false;
 let currentCat  = 'all';
-let songs       = [...ALL_SONGS];
+let songs       = [];        // currently visible (filtered) list
 let vidHidden   = false;
 let currentView = 'songs';
 
-// ─── Age Helpers ──────────────────────────────────────────────────────────────
+// ─── Song helpers ────────────────────────────────────────────────────────────
 
-function getBirthDate()  { return localStorage.getItem(KEY_BIRTH); }
+function getBaseSongs() {
+  return [...STATIC_SONGS, ...CUSTOM_SONGS];
+}
+
+/** Returns the YouTube video ID for a song (static or custom). */
+function getVideoId(song) {
+  return song.isCustom ? (song.videoId || null) : song.id;
+}
+
+function refreshFilteredSongs() {
+  const base = getBaseSongs();
+  songs = currentCat === 'all' ? base : base.filter(s => s.cat === currentCat);
+}
+
+// ─── YouTube URL parser ───────────────────────────────────────────────────────
+
+function extractVideoId(raw) {
+  if (!raw) return null;
+  const s = raw.trim();
+  // Full YouTube URL: ?v=ID
+  try {
+    const u = new URL(s);
+    if (u.hostname.includes('youtube.com')) {
+      const v = u.searchParams.get('v');
+      if (v) return v;
+    }
+    // youtu.be/ID
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null;
+  } catch {}
+  // Raw 11-char ID
+  if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  return null;
+}
+
+// ─── Add Song modal ───────────────────────────────────────────────────────────
+
+function openAddModal() {
+  document.getElementById('modal-add').classList.remove('hidden');
+  document.getElementById('add-title').focus();
+}
+
+function closeAddModal() {
+  document.getElementById('modal-add').classList.add('hidden');
+  document.getElementById('add-err').textContent = '';
+  ['add-title','add-artist','add-youtube','add-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('add-cat').value = 'english';
+}
+
+async function submitAddSong() {
+  const title   = document.getElementById('add-title').value.trim();
+  const artist  = document.getElementById('add-artist').value.trim();
+  const cat     = document.getElementById('add-cat').value;
+  const ytRaw   = document.getElementById('add-youtube').value.trim();
+  const note    = document.getElementById('add-note').value.trim();
+  const errEl   = document.getElementById('add-err');
+
+  if (!title)  { errEl.textContent = 'Please enter a song title.'; return; }
+  if (!artist) { errEl.textContent = 'Please enter an artist name.'; return; }
+
+  let videoId = null;
+  if (ytRaw) {
+    videoId = extractVideoId(ytRaw);
+    if (!videoId) {
+      errEl.textContent = 'Could not recognise that YouTube link. Try pasting just the video ID (11 characters after ?v=).';
+      return;
+    }
+  }
+  errEl.textContent = '';
+
+  const btn = document.getElementById('add-btn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  const newSong = {
+    id:       `custom_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+    title,
+    artist,
+    cat,
+    videoId:  videoId || null,
+    note:     note    || null,
+    addedAt:  new Date().toISOString(),
+    isCustom: true,
+  };
+
+  CUSTOM_SONGS = [...CUSTOM_SONGS, newSong];
+  localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+  await saveCustomSongsToFirestore();
+
+  refreshFilteredSongs();
+  renderCategories();
+  render();
+  closeAddModal();
+  btn.textContent = 'Add Song'; btn.disabled = false;
+}
+
+async function deleteCustomSong(songId) {
+  if (!confirm('Remove this song from the list?')) return;
+  CUSTOM_SONGS = CUSTOM_SONGS.filter(s => s.id !== songId);
+  localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+  await saveCustomSongsToFirestore();
+  refreshFilteredSongs();
+  if (currentIdx >= songs.length) currentIdx = Math.max(0, songs.length - 1);
+  renderCategories();
+  render();
+  if (currentView === 'diary') renderDiaryView();
+}
+
+async function saveCustomSongsToFirestore() {
+  if (!familyCode) return;
+  setSyncing(true);
+  await db.collection('families').doc(familyCode)
+    .set({ customSongs: CUSTOM_SONGS }, { merge: true });
+  setSyncing(false);
+}
+
+// ─── Age helpers ──────────────────────────────────────────────────────────────
+
+function getBirthDate() { return localStorage.getItem(KEY_BIRTH); }
 
 function getAgeMonths() {
   const bd = getBirthDate();
@@ -532,15 +761,14 @@ function getAgeMonths() {
 function ageLabel(m) {
   if (m < 12) return `${m} month${m !== 1 ? 's' : ''}`;
   const y = Math.floor(m / 12), mo = m % 12;
-  if (mo === 0) return `${y} year${y !== 1 ? 's' : ''}`;
-  return `${y} yr ${mo} mo`;
+  return mo === 0 ? `${y} year${y !== 1 ? 's' : ''}` : `${y} yr ${mo} mo`;
 }
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
 }
 
-// ─── Local + Firestore Diary ──────────────────────────────────────────────────
+// ─── Diary ────────────────────────────────────────────────────────────────────
 
 function getDiary() {
   try { return JSON.parse(localStorage.getItem(KEY_DIARY) || '[]'); }
@@ -557,42 +785,56 @@ function saveDiary(entries) {
     .catch(() => setSyncing(false));
 }
 
-function isLikedAtCurrentAge(videoId) {
+function isLikedAtCurrentAge(songId) {
   const m = getAgeMonths();
-  return m !== null && getDiary().some(e => e.videoId === videoId && e.ageMonths === m);
+  return m !== null && getDiary().some(e => e.songId === songId && e.ageMonths === m);
 }
 
-function toggleLike(songIdx) {
-  const song = songs[songIdx];
+function toggleLike(idx) {
+  const song = songs[idx];
   if (!song) return;
   const m = getAgeMonths();
   if (m === null) { document.getElementById('modal-birth').classList.remove('hidden'); return; }
-  let entries = getDiary();
-  const existing = entries.findIndex(e => e.videoId === song.id && e.ageMonths === m);
-  if (existing >= 0) entries.splice(existing, 1);
-  else entries.push({ videoId:song.id, title:song.title, artist:song.artist,
-                      cat:song.cat, ageMonths:m, ageLabel:ageLabel(m),
-                      likedAt:new Date().toISOString() });
+
+  let entries  = getDiary();
+  const songId = song.id; // works for both static (id=videoId) and custom (id=custom_xxx)
+  const exists = entries.findIndex(e => e.songId === songId && e.ageMonths === m);
+
+  if (exists >= 0) {
+    entries.splice(exists, 1);
+  } else {
+    entries.push({
+      songId:   songId,
+      videoId:  getVideoId(song),  // may be null for custom songs without YT link
+      title:    song.title,
+      artist:   song.artist,
+      cat:      song.cat,
+      note:     song.note || null,
+      isCustom: song.isCustom || false,
+      ageMonths: m,
+      ageLabel:  ageLabel(m),
+      likedAt:   new Date().toISOString(),
+    });
+  }
   saveDiary(entries);
   renderSongList();
   if (currentView === 'diary') renderDiaryView();
 }
 
-function deleteDiaryEntry(videoId, ageMonths) {
-  saveDiary(getDiary().filter(e => !(e.videoId === videoId && e.ageMonths === ageMonths)));
+function deleteDiaryEntry(songId, ageMonths) {
+  saveDiary(getDiary().filter(e => !(e.songId === songId && e.ageMonths === ageMonths)));
   renderDiaryView();
   renderSongList();
 }
 
-// ─── Sync UI ──────────────────────────────────────────────────────────────────
+// ─── Sync indicator ───────────────────────────────────────────────────────────
 
 function setSyncing(v) {
-  isSyncing = v;
   const dot = document.getElementById('sync-dot');
-  dot.className = 'sync-dot ' + (v ? 'syncing' : 'synced');
+  if (dot) dot.className = 'sync-dot ' + (v ? 'syncing' : 'synced');
 }
 
-// ─── Firebase Connection ──────────────────────────────────────────────────────
+// ─── Firebase connection ──────────────────────────────────────────────────────
 
 async function submitCode() {
   const raw = document.getElementById('code-input').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -602,7 +844,7 @@ async function submitCode() {
   document.getElementById('code-err').textContent = '';
   try {
     await connectFamily(raw);
-  } catch (e) {
+  } catch {
     document.getElementById('code-err').textContent = 'Could not connect. Check your internet and try again.';
     btn.textContent = 'Join family'; btn.disabled = false;
   }
@@ -612,27 +854,39 @@ async function connectFamily(code) {
   familyCode = code;
   localStorage.setItem(KEY_CODE, code);
 
-  // Load initial snapshot
   const snap = await db.collection('families').doc(code).get();
   if (snap.exists) {
     const d = snap.data();
-    if (d.birthDate) localStorage.setItem(KEY_BIRTH, d.birthDate);
-    if (d.diary)     localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+    if (d.birthDate)   localStorage.setItem(KEY_BIRTH, d.birthDate);
+    if (d.diary)       localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+    if (d.customSongs) {
+      CUSTOM_SONGS = d.customSongs;
+      localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+    }
   }
 
-  // Subscribe for real-time updates from other family devices
+  // Real-time listener
   if (unsubFirestore) unsubFirestore();
   unsubFirestore = db.collection('families').doc(code).onSnapshot(doc => {
     if (!doc.exists) return;
     const d = doc.data();
+    let needsRender = false;
     if (d.birthDate) { localStorage.setItem(KEY_BIRTH, d.birthDate); updateHeaderChips(); }
-    if (d.diary) {
-      localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+    if (d.diary) { localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary)); needsRender = true; }
+    if (d.customSongs) {
+      CUSTOM_SONGS = d.customSongs;
+      localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+      refreshFilteredSongs();
+      renderCategories();
+      needsRender = true;
+    }
+    if (needsRender) {
       renderSongList();
       if (currentView === 'diary') renderDiaryView();
     }
   }, () => {
-    document.getElementById('sync-dot').className = 'sync-dot offline';
+    const dot = document.getElementById('sync-dot');
+    if (dot) dot.className = 'sync-dot offline';
   });
 
   document.getElementById('modal-code').classList.add('hidden');
@@ -659,17 +913,20 @@ async function saveBirthDate() {
   bootApp();
 }
 
-// ─── Header Chips ─────────────────────────────────────────────────────────────
+// ─── Header chips ──────────────────────────────────────────────────────────────
 
 function updateHeaderChips() {
-  const m    = getAgeMonths();
-  const age  = document.getElementById('age-chip');
-  const fam  = document.getElementById('family-chip');
+  const m   = getAgeMonths();
+  const age = document.getElementById('age-chip');
+  const fam = document.getElementById('family-chip');
   if (m !== null) { age.textContent = `👶 ${ageLabel(m)} old`; age.classList.remove('hidden'); }
-  if (familyCode) { fam.innerHTML = `<span class="sync-dot synced"></span>${familyCode}`; fam.classList.remove('hidden'); }
+  if (familyCode) {
+    fam.innerHTML = `<span class="sync-dot synced"></span>${familyCode}`;
+    fam.classList.remove('hidden');
+  }
 }
 
-// ─── Render: Songs ────────────────────────────────────────────────────────────
+// ─── Render: song list ────────────────────────────────────────────────────────
 
 function renderCategories() {
   document.getElementById('categories').innerHTML = CATEGORIES.map(c =>
@@ -679,16 +936,34 @@ function renderCategories() {
 
 function renderSongList() {
   document.getElementById('song-list').innerHTML = songs.map((s, i) => {
-    const liked = isLikedAtCurrentAge(s.id);
-    return `<div class="song-item ${i===currentIdx?'active':''}" onclick="selectSong(${i})">
+    const liked   = isLikedAtCurrentAge(s.id);
+    const vid     = getVideoId(s);
+    const noVideo = s.isCustom && !vid;
+
+    const tagHtml = s.isCustom
+      ? `<span class="song-item-tag custom-tag">✦ Custom</span>`
+      : `<span class="song-item-tag">${CAT_EMOJI[s.cat]||'🎵'} ${CAT_LABEL[s.cat]||s.cat}</span>`;
+
+    const noVidBadge = noVideo
+      ? `<span class="no-video-tag" title="No YouTube link — add one via edit">No video</span>` : '';
+
+    const deleteBtn = s.isCustom
+      ? `<button class="delete-song-btn" onclick="event.stopPropagation();deleteCustomSong('${s.id}')" title="Remove from list">🗑</button>` : '';
+
+    return `<div class="song-item ${i===currentIdx?'active':''} ${noVideo?'no-video':''}" onclick="selectSong(${i})">
       <div class="song-num">${i===currentIdx?(isPlaying?'▶':'❚❚'):i+1}</div>
       <div class="song-item-info">
         <div class="song-item-title">${s.title}</div>
-        <div class="song-item-artist">${s.artist}</div>
+        <div class="song-item-meta">
+          <span class="song-item-artist">${s.artist}</span>
+          ${s.note ? `<span class="song-item-note">${s.note}</span>` : ''}
+        </div>
       </div>
-      <span class="song-item-tag">${CAT_EMOJI[s.cat]||'🎵'} ${CAT_LABEL[s.cat]||s.cat}</span>
+      ${noVidBadge}
+      ${tagHtml}
       <button class="heart-btn" onclick="event.stopPropagation();toggleLike(${i})"
               title="${liked?'Remove from diary':'Add to diary'}">${liked?'❤️':'🤍'}</button>
+      ${deleteBtn}
     </div>`;
   }).join('');
 }
@@ -717,7 +992,7 @@ function renderModes() {
 
 function render() { renderNowPlaying(); renderPlayBtn(); renderSongList(); }
 
-// ─── Render: Diary ────────────────────────────────────────────────────────────
+// ─── Render: diary ────────────────────────────────────────────────────────────
 
 function renderDiaryView() {
   const el = document.getElementById('diary-content');
@@ -725,25 +1000,27 @@ function renderDiaryView() {
   if (!entries.length) {
     el.innerHTML = `<div class="diary-empty"><div class="diary-empty-icon">📖</div>
       <h3>The diary is empty</h3>
-      <p>Tap the 🤍 on any song to save it<br>to Aadritha's music diary.<br><br>
-      Her age is recorded automatically so you<br>can look back at every stage of her musical journey.</p></div>`;
+      <p>Tap 🤍 on any song to save it to Aadritha's diary.<br><br>
+      Her age is recorded automatically — you can look back at every musical milestone.</p></div>`;
     return;
   }
   const catCounts = {};
   entries.forEach(e => { catCounts[e.cat] = (catCounts[e.cat]||0)+1; });
   const topCat   = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0];
   const topLabel = topCat ? `${CAT_EMOJI[topCat[0]]||'🎵'} ${CAT_LABEL[topCat[0]]||topCat[0]}` : '–';
-  const grouped  = {};
+
+  const grouped = {};
   entries.forEach(e => {
     if (!grouped[e.ageMonths]) grouped[e.ageMonths] = { label:e.ageLabel, entries:[] };
     grouped[e.ageMonths].entries.push(e);
   });
   const sorted = Object.keys(grouped).map(Number).sort((a,b)=>b-a);
+
   el.innerHTML = `
     <div class="diary-stats">
       <div class="stat"><div class="stat-num">${entries.length}</div><div class="stat-lbl">songs loved</div></div>
       <div class="stat-div"></div>
-      <div class="stat"><div class="stat-num">${sorted.length}</div><div class="stat-lbl">age milestone${sorted.length!==1?'s':''}</div></div>
+      <div class="stat"><div class="stat-num">${sorted.length}</div><div class="stat-lbl">milestone${sorted.length!==1?'s':''}</div></div>
       <div class="stat-div"></div>
       <div class="stat"><div class="stat-num" style="font-size:18px">${topLabel}</div><div class="stat-lbl">top style</div></div>
     </div>
@@ -754,30 +1031,33 @@ function renderDiaryView() {
         <div class="age-badge">🎂 ${g.label}</div>
         <div class="age-period-date">${monthYear}</div>
         <div class="diary-entries">
-          ${g.entries.map(e=>`
-            <div class="diary-entry">
+          ${g.entries.map(e => {
+            const hasVid = !!e.videoId;
+            return `<div class="diary-entry">
               <div class="diary-entry-icon">${CAT_EMOJI[e.cat]||'🎵'}</div>
               <div class="diary-entry-info">
                 <div class="diary-entry-title">${e.title}</div>
                 <div class="diary-entry-artist">${e.artist}</div>
+                ${e.note ? `<div class="diary-entry-note">💬 ${e.note}</div>` : ''}
                 <div class="diary-entry-date">Saved on ${formatDate(e.likedAt)}</div>
               </div>
-              <button class="diary-play-btn" onclick="playFromDiary('${e.videoId}')" title="Play">▶</button>
-              <button class="diary-del-btn"  onclick="deleteDiaryEntry('${e.videoId}',${e.ageMonths})" title="Remove">✕</button>
-            </div>`).join('')}
+              <button class="diary-play-btn" ${!hasVid?'disabled title="No YouTube link"':''} onclick="playFromDiary('${e.songId}')">▶</button>
+              <button class="diary-del-btn"  onclick="deleteDiaryEntry('${e.songId}',${e.ageMonths})">✕</button>
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
     }).join('')}`;
 }
 
-function playFromDiary(videoId) {
+function playFromDiary(songId) {
   setCategory('all');
   setView('songs');
-  const idx = songs.findIndex(s => s.id === videoId);
+  const idx = songs.findIndex(s => s.id === songId);
   if (idx >= 0) selectSong(idx);
 }
 
-// ─── View / Category ──────────────────────────────────────────────────────────
+// ─── View / category ──────────────────────────────────────────────────────────
 
 function setView(view) {
   currentView = view;
@@ -790,61 +1070,96 @@ function setView(view) {
 
 function setCategory(cat) {
   currentCat = cat;
-  songs = cat==='all' ? [...ALL_SONGS] : ALL_SONGS.filter(s=>s.cat===cat);
+  refreshFilteredSongs();
   currentIdx = 0;
   renderCategories();
   render();
 }
 
-// ─── Player Actions ───────────────────────────────────────────────────────────
+// ─── Player ───────────────────────────────────────────────────────────────────
 
-function selectSong(idx)  { currentIdx=idx; loadAndPlay(songs[idx].id); }
-function loadAndPlay(vid) { if (!playerReady) return; player.loadVideoById(vid); isPlaying=true; render(); }
+function selectSong(idx) {
+  currentIdx = idx;
+  const vid = getVideoId(songs[idx]);
+  if (vid) {
+    loadAndPlay(vid);
+    // Swap out "No video" message for the player
+    document.getElementById('vid-wrapper').innerHTML =
+      '<div id="yt-player"></div><p class="audio-tip">Set your device face-down for audio-only listening</p>';
+    if (playerReady) player.loadVideoById(vid);
+  } else {
+    isPlaying = false;
+    document.getElementById('vid-wrapper').innerHTML =
+      `<div class="no-video-msg">🎵 <strong>${songs[idx].title}</strong> has no YouTube link.<br>
+       You can still ❤️ it to save it in the diary.</div>`;
+    render();
+  }
+}
+
+function loadAndPlay(vid) {
+  if (!playerReady) return;
+  player.loadVideoById(vid);
+  isPlaying = true;
+  render();
+}
 
 function togglePlay() {
-  if (!playerReady||!songs.length) return;
+  if (!songs.length) return;
+  const vid = getVideoId(songs[currentIdx]);
+  if (!vid) return; // no video for this song
+  if (!playerReady) return;
   const s = player.getPlayerState();
-  if (s===YT.PlayerState.PLAYING)               player.pauseVideo();
-  else if (s===YT.PlayerState.PAUSED||s===YT.PlayerState.CUED) player.playVideo();
-  else loadAndPlay(songs[currentIdx].id);
+  if (s === YT.PlayerState.PLAYING)                              player.pauseVideo();
+  else if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) player.playVideo();
+  else loadAndPlay(vid);
 }
 
 function playNext() {
   if (!songs.length) return;
-  if (isShuffle) { let n; do { n=Math.floor(Math.random()*songs.length); } while (songs.length>1&&n===currentIdx); currentIdx=n; }
-  else currentIdx=(currentIdx+1)%songs.length;
-  loadAndPlay(songs[currentIdx].id);
+  if (isShuffle) {
+    let n; do { n = Math.floor(Math.random() * songs.length); } while (songs.length > 1 && n === currentIdx);
+    currentIdx = n;
+  } else {
+    currentIdx = (currentIdx + 1) % songs.length;
+  }
+  selectSong(currentIdx);
 }
 
 function playPrev() {
   if (!songs.length) return;
-  currentIdx=(currentIdx-1+songs.length)%songs.length;
-  loadAndPlay(songs[currentIdx].id);
+  currentIdx = (currentIdx - 1 + songs.length) % songs.length;
+  selectSong(currentIdx);
 }
 
-function toggleShuffle() { isShuffle=!isShuffle; renderModes(); }
-function toggleRepeat()  { isRepeat =!isRepeat;  renderModes(); }
+function toggleShuffle() { isShuffle = !isShuffle; renderModes(); }
+function toggleRepeat()  { isRepeat  = !isRepeat;  renderModes(); }
 
 function toggleVideo() {
-  vidHidden=!vidHidden;
-  document.getElementById('vid-wrapper').style.display=vidHidden?'none':'block';
-  document.getElementById('vid-toggle').textContent=vidHidden?'Show video':'Hide video';
+  vidHidden = !vidHidden;
+  document.getElementById('vid-wrapper').style.display = vidHidden ? 'none' : 'block';
+  document.getElementById('vid-toggle').textContent    = vidHidden ? 'Show video' : 'Hide video';
 }
 
 // ─── YouTube IFrame API ───────────────────────────────────────────────────────
 
-(function(){ var t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; document.head.appendChild(t); })();
+(function () {
+  var t = document.createElement('script');
+  t.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(t);
+})();
 
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('yt-player', {
-    height:'210', width:'100%',
-    playerVars:{ autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
-    events:{
-      onReady: ()=>{ playerReady=true; },
-      onStateChange: e=>{
-        if (e.data===YT.PlayerState.PLAYING){ isPlaying=true;  render(); }
-        if (e.data===YT.PlayerState.PAUSED) { isPlaying=false; render(); }
-        if (e.data===YT.PlayerState.ENDED)  { isRepeat ? (player.seekTo(0),player.playVideo()) : playNext(); }
+    height: '210', width: '100%',
+    playerVars: { autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
+    events: {
+      onReady: () => { playerReady = true; },
+      onStateChange: e => {
+        if (e.data === YT.PlayerState.PLAYING) { isPlaying = true;  render(); }
+        if (e.data === YT.PlayerState.PAUSED)  { isPlaying = false; render(); }
+        if (e.data === YT.PlayerState.ENDED)   {
+          isRepeat ? (player.seekTo(0), player.playVideo()) : playNext();
+        }
       },
     },
   });
@@ -853,9 +1168,7 @@ function onYouTubeIframeAPIReady() {
 // ─── iOS install hint ─────────────────────────────────────────────────────────
 
 function showIOSHint() {
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true;
-  if (isIOS && !isStandalone) {
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone) {
     document.getElementById('install-banner').classList.add('show');
   }
 }
@@ -863,6 +1176,7 @@ function showIOSHint() {
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 function bootApp() {
+  refreshFilteredSongs();
   updateHeaderChips();
   renderCategories();
   renderModes();
@@ -871,26 +1185,24 @@ function bootApp() {
 
 (function init() {
   document.getElementById('birth-input').max = new Date().toISOString().split('T')[0];
-
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }
-
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   showIOSHint();
+
+  // Load custom songs from local cache
+  try { CUSTOM_SONGS = JSON.parse(localStorage.getItem(KEY_CUSTOM) || '[]'); } catch { CUSTOM_SONGS = []; }
 
   const code = localStorage.getItem(KEY_CODE);
   if (code) {
-    // Restore local data immediately (works offline)
     familyCode = code;
     bootApp();
-    // Show birth date modal if missing
     if (!getBirthDate()) document.getElementById('modal-birth').classList.remove('hidden');
-    // Then sync with Firestore in background
+    // Background sync
     connectFamily(code).catch(() => {
-      document.getElementById('sync-dot').className = 'sync-dot offline';
+      const dot = document.getElementById('sync-dot');
+      if (dot) dot.className = 'sync-dot offline';
     });
   } else {
+    refreshFilteredSongs();
     document.getElementById('modal-code').classList.remove('hidden');
   }
 })();
