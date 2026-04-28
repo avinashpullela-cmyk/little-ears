@@ -1073,7 +1073,7 @@ async function saveCustomSongsToFirestore() {
 
 // ─── Age helpers ──────────────────────────────────────────────────────────────
 
-function getBirthDate() { return localStorage.getItem(KEY_BIRTH); }
+function getBirthDate() { return '2025-01-14'; }  // Aadritha's birthday — fixed forever
 
 function getAgeMonths() {
   const bd = getBirthDate();
@@ -1183,7 +1183,6 @@ async function connectFamily(code) {
   const snap = await db.collection('families').doc(code).get();
   if (snap.exists) {
     const d = snap.data();
-    if (d.birthDate)   localStorage.setItem(KEY_BIRTH, d.birthDate);
     if (d.diary)       localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
@@ -1201,7 +1200,6 @@ async function connectFamily(code) {
     if (!doc.exists) return;
     const d = doc.data();
     let needsRender = false;
-    if (d.birthDate) { localStorage.setItem(KEY_BIRTH, d.birthDate); updateHeaderChips(); }
     if (d.diary) { localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary)); needsRender = true; }
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
@@ -1228,12 +1226,7 @@ async function connectFamily(code) {
 
   document.getElementById('modal-code').classList.add('hidden');
   updateHeaderChips();
-
-  if (!getBirthDate()) {
-    document.getElementById('modal-birth').classList.remove('hidden');
-  } else {
-    bootApp();
-  }
+  bootApp();  // birth date is hardcoded — always boot immediately
 }
 
 async function saveBirthDate() {
@@ -1475,9 +1468,18 @@ function togglePlay() {
   if (!vid) return; // no video for this song
   if (!playerReady) return;
   const s = player.getPlayerState();
-  if (s === YT.PlayerState.PLAYING)                              player.pauseVideo();
-  else if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) player.playVideo();
-  else loadAndPlay(vid);
+  // Treat BUFFERING (3) same as PLAYING — user clicked pause before the video fully started
+  if (s === YT.PlayerState.PLAYING || s === YT.PlayerState.BUFFERING) {
+    player.pauseVideo();
+    isPlaying = false;
+    renderPlayBtn();
+  } else if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) {
+    player.playVideo();
+    isPlaying = true;
+    renderPlayBtn();
+  } else {
+    loadAndPlay(vid);
+  }
 }
 
 function playNext() {
@@ -1550,7 +1552,9 @@ function bootApp() {
 }
 
 (function init() {
-  document.getElementById('birth-input').max = new Date().toISOString().split('T')[0];
+  // Birth date is fixed — hardcode it so no device ever asks
+  localStorage.setItem(KEY_BIRTH, getBirthDate());
+
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   showIOSHint();
 
@@ -1558,12 +1562,17 @@ function bootApp() {
   try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(KEY_CUSTOM) || '[]'); } catch { CUSTOM_SONGS  = []; }
   try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(KEY_HIDDEN) || '[]'); } catch { HIDDEN_SONGS  = []; }
 
-  const code = localStorage.getItem(KEY_CODE);
+  // Support ?code=xxx in the URL — share one link, everyone joins automatically
+  const urlCode  = new URLSearchParams(location.search).get('code');
+  const code     = urlCode || localStorage.getItem(KEY_CODE);
+
   if (code) {
+    // Strip the code from the address bar so it doesn't linger visibly
+    if (urlCode) history.replaceState({}, '', location.pathname);
     familyCode = code;
+    localStorage.setItem(KEY_CODE, code);
     bootApp();
-    if (!getBirthDate()) document.getElementById('modal-birth').classList.remove('hidden');
-    // Background sync
+    // Background Firestore sync (diary, custom songs, hidden songs)
     connectFamily(code).catch(() => {
       const dot = document.getElementById('sync-dot');
       if (dot) dot.className = 'sync-dot offline';
