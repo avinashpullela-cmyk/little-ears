@@ -345,6 +345,62 @@
     .stat-lbl { font-size: 11px; font-weight: 600; color: var(--text-lt); margin-top: 4px; text-transform: uppercase; letter-spacing: .6px; }
     .stat-div  { width: 1px; height: 36px; background: var(--border); }
 
+    /* ── Log Memory button ── */
+    .diary-action-row {
+      display: flex; justify-content: flex-end; margin-bottom: 14px;
+    }
+    .log-memory-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--secondary); color: #fff;
+      border: none; border-radius: 20px; padding: 8px 16px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: opacity .18s;
+    }
+    .log-memory-btn:hover { opacity: .85; }
+
+    /* ── Retro badge on diary entries ── */
+    .retro-badge {
+      font-size: 10px; font-weight: 700; color: var(--secondary);
+      background: #edf6f0; border-radius: 8px; padding: 2px 7px;
+      margin-top: 3px; display: inline-block;
+    }
+
+    /* ── Song picker dropdown (inside Log Memory modal) ── */
+    .picker-wrap { position: relative; }
+    .picker-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #fff; border: 2px solid var(--border); border-radius: 14px;
+      max-height: 220px; overflow-y: auto; z-index: 10;
+      box-shadow: 0 8px 24px rgba(61,64,91,.12);
+    }
+    .picker-dropdown.hidden { display: none; }
+    .picker-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; cursor: pointer; transition: background .12s;
+    }
+    .picker-item:hover { background: var(--bg); }
+    .picker-item + .picker-item { border-top: 1px solid var(--border); }
+    .picker-cat    { font-size: 20px; flex-shrink: 0; }
+    .picker-title  { font-size: 13px; font-weight: 600; color: var(--text); }
+    .picker-artist { font-size: 11px; color: var(--text-lt); margin-top: 1px; }
+    .picker-empty  { padding: 16px; text-align: center; font-size: 13px; color: var(--text-lt); }
+
+    /* ── Age preview pill ── */
+    .age-preview {
+      font-size: 12px; font-weight: 600; color: var(--secondary);
+      background: #edf6f0; border-radius: 10px; padding: 5px 12px;
+      margin-top: 6px; display: none;
+    }
+
+    /* ── Hidden songs restore row ── */
+    .restore-row {
+      text-align: center; padding: 10px; font-size: 12px; color: var(--text-lt);
+    }
+    .restore-link {
+      color: var(--primary); cursor: pointer; font-weight: 600;
+      background: none; border: none; font-size: 12px; text-decoration: underline;
+    }
+
     .diary-empty { text-align: center; padding: 56px 20px; color: var(--text-lt); }
     .diary-empty-icon { font-size: 52px; margin-bottom: 18px; }
     .diary-empty h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
@@ -494,6 +550,48 @@
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeAddModal()">Cancel</button>
       <button class="modal-btn" id="add-btn" onclick="submitAddSong()">Add Song</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Log a Past Memory ──────────────────────────────── -->
+<div id="modal-memory" class="modal-overlay hidden">
+  <div class="modal-box left">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="modal-icon">📅</div>
+      <h2>Log a past memory</h2>
+      <p>Record a song she loved at a specific time — her age is worked out automatically from the date.</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Song <span>*</span></label>
+      <div class="picker-wrap">
+        <input id="memory-song-search" class="modal-input" type="text"
+               placeholder="Type to search songs…" autocomplete="off"
+               oninput="onMemorySongSearch(this.value)"
+               onfocus="onMemorySongSearch(this.value)">
+        <div id="memory-picker-dropdown" class="picker-dropdown hidden"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date she liked this <span>*</span></label>
+      <input id="memory-date" class="modal-input" type="date"
+             oninput="onMemoryDateChange(this.value)">
+      <div class="age-preview" id="memory-age-preview"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input id="memory-note" class="modal-input" type="text"
+             placeholder="e.g. She danced to this at grandma's house">
+    </div>
+
+    <div class="modal-err" id="memory-err"></div>
+
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeMemoryModal()">Cancel</button>
+      <button class="modal-btn" onclick="submitLogMemory()">Save memory</button>
     </div>
   </div>
 </div>
@@ -648,12 +746,16 @@ const KEY_CODE   = 'le_family_code';
 const KEY_BIRTH  = 'le_birthdate';
 const KEY_DIARY  = 'le_diary';
 const KEY_CUSTOM = 'le_custom_songs';
+const KEY_HIDDEN = 'le_hidden_songs';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
 let familyCode     = null;
 let unsubFirestore = null;
 let CUSTOM_SONGS   = [];
+let HIDDEN_SONGS   = [];    // IDs of static songs removed from the list
+let _pickerSongs   = [];    // temp list for Log Memory song picker
+let memorySelectedSong = null;
 
 let player      = null;
 let playerReady = false;
@@ -679,7 +781,7 @@ function getVideoId(song) {
 }
 
 function refreshFilteredSongs() {
-  const base = getBaseSongs();
+  const base = getBaseSongs().filter(s => !HIDDEN_SONGS.includes(s.id));
   let filtered = currentCat === 'all' ? base : base.filter(s => s.cat === currentCat);
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
@@ -731,6 +833,159 @@ function extractVideoId(raw) {
   // Raw 11-char ID
   if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
   return null;
+}
+
+// ─── Hide / restore static songs ─────────────────────────────────────────────
+
+async function hideSong(songId) {
+  if (HIDDEN_SONGS.includes(songId)) return;
+  HIDDEN_SONGS = [...HIDDEN_SONGS, songId];
+  localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
+  if (familyCode) {
+    setSyncing(true);
+    await db.collection('families').doc(familyCode)
+      .set({ hiddenSongs: HIDDEN_SONGS }, { merge: true });
+    setSyncing(false);
+  }
+  if (currentIdx >= songs.length - 1) currentIdx = Math.max(0, currentIdx - 1);
+  refreshFilteredSongs();
+  renderCategories();
+  render();
+}
+
+async function restoreAllSongs() {
+  HIDDEN_SONGS = [];
+  localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
+  if (familyCode) {
+    setSyncing(true);
+    await db.collection('families').doc(familyCode)
+      .set({ hiddenSongs: [] }, { merge: true });
+    setSyncing(false);
+  }
+  refreshFilteredSongs();
+  renderCategories();
+  render();
+}
+
+// ─── Log a past memory ────────────────────────────────────────────────────────
+
+/** Age in months at a specific past date (uses stored birth date). */
+function getAgeMonthsAt(dateStr) {
+  const bd = getBirthDate();
+  if (!bd || !dateStr) return null;
+  const birth   = new Date(bd);
+  const atDate  = new Date(dateStr);
+  if (atDate < birth) return null;
+  let m = (atDate.getFullYear() - birth.getFullYear()) * 12
+        + (atDate.getMonth()    - birth.getMonth());
+  if (atDate.getDate() < birth.getDate()) m--;
+  return Math.max(0, m);
+}
+
+function openMemoryModal() {
+  if (!getBirthDate()) { document.getElementById('modal-birth').classList.remove('hidden'); return; }
+  memorySelectedSong = null;
+  _pickerSongs = [];
+  document.getElementById('memory-song-search').value = '';
+  document.getElementById('memory-date').value        = new Date().toISOString().split('T')[0];
+  document.getElementById('memory-note').value        = '';
+  document.getElementById('memory-err').textContent   = '';
+  document.getElementById('memory-age-preview').style.display = 'none';
+  document.getElementById('memory-picker-dropdown').classList.add('hidden');
+  // Constrain date picker to [birthDate, today]
+  document.getElementById('memory-date').min = getBirthDate();
+  document.getElementById('memory-date').max = new Date().toISOString().split('T')[0];
+  onMemoryDateChange(document.getElementById('memory-date').value);
+  document.getElementById('modal-memory').classList.remove('hidden');
+  setTimeout(() => document.getElementById('memory-song-search').focus(), 100);
+}
+
+function closeMemoryModal() {
+  document.getElementById('modal-memory').classList.add('hidden');
+  document.getElementById('memory-picker-dropdown').classList.add('hidden');
+}
+
+function onMemorySongSearch(val) {
+  const q        = val.trim().toLowerCase();
+  const allSongs = getBaseSongs();
+  const matches  = (q
+    ? allSongs.filter(s =>
+        s.title.toLowerCase().includes(q)  ||
+        s.artist.toLowerCase().includes(q) ||
+        (CAT_LABEL[s.cat] || '').toLowerCase().includes(q))
+    : allSongs
+  ).slice(0, 25);
+  _pickerSongs = matches;
+
+  const dd = document.getElementById('memory-picker-dropdown');
+  dd.innerHTML = matches.length
+    ? matches.map((s, i) => `
+        <div class="picker-item" onmousedown="selectMemorySong(${i})">
+          <span class="picker-cat">${CAT_EMOJI[s.cat] || '🎵'}</span>
+          <div>
+            <div class="picker-title">${s.title}</div>
+            <div class="picker-artist">${s.artist}</div>
+          </div>
+        </div>`).join('')
+    : '<div class="picker-empty">No songs found</div>';
+  dd.classList.remove('hidden');
+}
+
+function selectMemorySong(idx) {
+  const song = _pickerSongs[idx];
+  if (!song) return;
+  memorySelectedSong = song;
+  document.getElementById('memory-song-search').value = `${song.title} — ${song.artist}`;
+  document.getElementById('memory-picker-dropdown').classList.add('hidden');
+  document.getElementById('memory-err').textContent = '';
+}
+
+function onMemoryDateChange(val) {
+  const preview = document.getElementById('memory-age-preview');
+  const m = getAgeMonthsAt(val);
+  if (m !== null) {
+    preview.textContent = `She would have been ${ageLabel(m)} old`;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function submitLogMemory() {
+  const dateVal = document.getElementById('memory-date').value;
+  const note    = document.getElementById('memory-note').value.trim();
+  const errEl   = document.getElementById('memory-err');
+
+  if (!memorySelectedSong) { errEl.textContent = 'Please select a song first.'; return; }
+  if (!dateVal)             { errEl.textContent = 'Please pick a date.'; return; }
+
+  const m = getAgeMonthsAt(dateVal);
+  if (m === null) { errEl.textContent = 'Date is before her birth date — please pick a later date.'; return; }
+
+  const song    = memorySelectedSong;
+  let entries   = getDiary();
+  const exists  = entries.some(e => e.songId === song.id && e.ageMonths === m);
+  if (exists) { errEl.textContent = 'This song is already in her diary for that age. Remove it there first if needed.'; return; }
+
+  entries.push({
+    songId:    song.id,
+    videoId:   getVideoId(song),
+    title:     song.title,
+    artist:    song.artist,
+    cat:       song.cat,
+    note:      note || null,
+    isCustom:  song.isCustom || false,
+    isRetro:   true,
+    ageMonths: m,
+    ageLabel:  ageLabel(m),
+    likedAt:   new Date(dateVal).toISOString(),
+  });
+
+  saveDiary(entries);
+  closeMemoryModal();
+  setView('diary');
+  renderDiaryView();
+  renderSongList();
 }
 
 // ─── Add Song modal ───────────────────────────────────────────────────────────
@@ -933,6 +1188,10 @@ async function connectFamily(code) {
       CUSTOM_SONGS = d.customSongs;
       localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
     }
+    if (d.hiddenSongs) {
+      HIDDEN_SONGS = d.hiddenSongs;
+      localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
+    }
   }
 
   // Real-time listener
@@ -946,6 +1205,13 @@ async function connectFamily(code) {
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
       localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+      refreshFilteredSongs();
+      renderCategories();
+      needsRender = true;
+    }
+    if (d.hiddenSongs !== undefined) {
+      HIDDEN_SONGS = d.hiddenSongs || [];
+      localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
       refreshFilteredSongs();
       renderCategories();
       needsRender = true;
@@ -1024,7 +1290,8 @@ function renderSongList() {
       ? `<span class="no-video-tag" title="No YouTube link — add one via edit">No video</span>` : '';
 
     const deleteBtn = s.isCustom
-      ? `<button class="delete-song-btn" onclick="event.stopPropagation();deleteCustomSong('${s.id}')" title="Remove from list">🗑</button>` : '';
+      ? `<button class="delete-song-btn" onclick="event.stopPropagation();deleteCustomSong('${s.id}')" title="Remove from list">🗑</button>`
+      : `<button class="delete-song-btn" onclick="event.stopPropagation();hideSong('${s.id}')" title="Remove from list">🗑</button>`;
 
     return `<div class="song-item ${i===currentIdx?'active':''} ${noVideo?'no-video':''}" onclick="selectSong(${i})">
       <div class="song-num">${i===currentIdx?(isPlaying?'▶':'❚❚'):i+1}</div>
@@ -1041,7 +1308,9 @@ function renderSongList() {
               title="${liked?'Remove from diary':'Add to diary'}">${liked?'❤️':'🤍'}</button>
       ${deleteBtn}
     </div>`;
-  }).join('');
+  }).join('') + (HIDDEN_SONGS.length
+    ? `<div class="restore-row">${HIDDEN_SONGS.length} song${HIDDEN_SONGS.length!==1?'s':''} hidden — <button class="restore-link" onclick="restoreAllSongs()">Restore all</button></div>`
+    : '');
 }
 
 function renderNowPlaying() {
@@ -1074,7 +1343,11 @@ function renderDiaryView() {
   const el = document.getElementById('diary-content');
   const entries = getDiary();
   if (!entries.length) {
-    el.innerHTML = `<div class="diary-empty"><div class="diary-empty-icon">📖</div>
+    el.innerHTML = `
+      <div class="diary-action-row">
+        <button class="log-memory-btn" onclick="openMemoryModal()">📅 Log a past memory</button>
+      </div>
+      <div class="diary-empty"><div class="diary-empty-icon">📖</div>
       <h3>The diary is empty</h3>
       <p>Tap 🤍 on any song to save it to Aadritha's diary.<br><br>
       Her age is recorded automatically — you can look back at every musical milestone.</p></div>`;
@@ -1100,6 +1373,9 @@ function renderDiaryView() {
       <div class="stat-div"></div>
       <div class="stat"><div class="stat-num" style="font-size:18px">${topLabel}</div><div class="stat-lbl">top style</div></div>
     </div>
+    <div class="diary-action-row">
+      <button class="log-memory-btn" onclick="openMemoryModal()">📅 Log a past memory</button>
+    </div>
     ${sorted.map(age => {
       const g = grouped[age];
       const monthYear = new Date(g.entries[0].likedAt).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
@@ -1115,6 +1391,7 @@ function renderDiaryView() {
                 <div class="diary-entry-title">${e.title}</div>
                 <div class="diary-entry-artist">${e.artist}</div>
                 ${e.note ? `<div class="diary-entry-note">💬 ${e.note}</div>` : ''}
+                ${e.isRetro ? `<span class="retro-badge">📅 Logged retroactively</span>` : ''}
                 <div class="diary-entry-date">Saved on ${formatDate(e.likedAt)}</div>
               </div>
               <button class="diary-play-btn" ${!hasVid?'disabled title="No YouTube link"':''} onclick="playFromDiary('${e.songId}')">▶</button>
@@ -1268,8 +1545,9 @@ function bootApp() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   showIOSHint();
 
-  // Load custom songs from local cache
-  try { CUSTOM_SONGS = JSON.parse(localStorage.getItem(KEY_CUSTOM) || '[]'); } catch { CUSTOM_SONGS = []; }
+  // Load custom songs and hidden-song list from local cache
+  try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(KEY_CUSTOM) || '[]'); } catch { CUSTOM_SONGS  = []; }
+  try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(KEY_HIDDEN) || '[]'); } catch { HIDDEN_SONGS  = []; }
 
   const code = localStorage.getItem(KEY_CODE);
   if (code) {
