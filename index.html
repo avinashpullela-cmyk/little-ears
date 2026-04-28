@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Little Ears – World Music for Aadritha</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#e07b54">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Little Ears">
+  <link rel="apple-touch-icon" href="./icon.svg">
+
+  <!-- Firebase compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,37 +41,51 @@
       padding-bottom: 52px;
     }
 
-    /* ── Modal ── */
+    /* ── Modals ── */
     .modal-overlay {
       position: fixed; inset: 0;
-      background: rgba(30,20,10,.55);
+      background: rgba(30,20,10,.6);
       display: flex; align-items: center; justify-content: center;
       z-index: 999; padding: 24px;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
     }
     .modal-overlay.hidden { display: none; }
     .modal-box {
       background: #fff; border-radius: 24px;
-      padding: 36px 28px; max-width: 360px; width: 100%;
+      padding: 36px 28px; max-width: 380px; width: 100%;
       text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.18);
     }
-    .modal-icon  { font-size: 52px; margin-bottom: 16px; }
+    .modal-icon { font-size: 52px; margin-bottom: 16px; line-height: 1; }
     .modal-box h2 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-    .modal-box p  { font-size: 14px; color: var(--text-lt); line-height: 1.6; margin-bottom: 22px; }
+    .modal-box p  { font-size: 14px; color: var(--text-lt); line-height: 1.65; margin-bottom: 22px; }
     .modal-input {
       width: 100%; padding: 13px 16px;
       border: 2px solid var(--border); border-radius: 12px;
-      font-size: 15px; color: var(--text); outline: none; margin-bottom: 14px;
+      font-size: 16px; color: var(--text); outline: none;
+      margin-bottom: 10px; text-align: center; letter-spacing: .5px;
     }
     .modal-input:focus { border-color: var(--primary); }
+    .modal-hint { font-size: 12px; color: var(--text-lt); margin-bottom: 18px; }
+    .modal-err  { font-size: 13px; color: #e63946; margin-bottom: 12px; min-height: 18px; }
     .modal-btn {
-      width: 100%; padding: 14px;
+      width: 100%; padding: 15px;
       background: var(--primary); color: #fff;
       border: none; border-radius: 12px;
       font-size: 16px; font-weight: 700; cursor: pointer;
       transition: background .18s;
     }
-    .modal-btn:hover { background: var(--primary-lt); }
+    .modal-btn:hover    { background: var(--primary-lt); }
+    .modal-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* Sync status dot */
+    .sync-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
+    }
+    .sync-dot.synced  { background: #52b788; }
+    .sync-dot.syncing { background: #f4a261; animation: blink 1s infinite; }
+    .sync-dot.offline { background: #adb5bd; }
+    @keyframes blink { 50% { opacity: .3; } }
 
     /* ── Header ── */
     header {
@@ -66,21 +93,24 @@
       color: #fff; padding: 26px 20px 18px; text-align: center;
     }
     header h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
-    header .tagline { font-size: 14px; opacity: .85; margin-top: 3px; }
-    .age-chip {
+    .tagline   { font-size: 14px; opacity: .85; margin-top: 3px; }
+    .header-meta {
+      display: flex; justify-content: center; align-items: center;
+      gap: 10px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .age-chip, .family-chip {
       display: inline-flex; align-items: center; gap: 5px;
       background: rgba(255,255,255,.22); border-radius: 16px;
-      padding: 5px 14px; font-size: 13px; font-weight: 600;
-      margin-top: 10px; color: #fff;
+      padding: 5px 13px; font-size: 12px; font-weight: 600; color: #fff;
     }
-    .age-chip.hidden { display: none; }
+    .age-chip.hidden, .family-chip.hidden { display: none; }
 
     /* ── Layout ── */
     .main { max-width: 620px; margin: 0 auto; padding: 0 16px; }
 
     /* ── View tabs ── */
     .view-tabs {
-      display: flex; gap: 0;
+      display: flex;
       background: var(--border); border-radius: 14px; padding: 3px;
       margin: 18px 0 14px;
     }
@@ -143,7 +173,7 @@
       padding: 10px; border-radius: 50%; transition: all .18s;
       display: flex; align-items: center; justify-content: center;
     }
-    .ctrl-btn:hover { color: var(--primary); background: rgba(224,123,84,.1); }
+    .ctrl-btn:hover  { color: var(--primary); background: rgba(224,123,84,.1); }
     .ctrl-btn.active { color: var(--primary); }
     .play-btn {
       width: 60px; height: 60px; background: var(--primary); color: #fff;
@@ -153,7 +183,7 @@
       transition: all .18s; margin: 0 4px;
     }
     .play-btn:hover  { background: var(--primary-lt); transform: scale(1.06); }
-    .play-btn:active { transform: scale(0.96); }
+    .play-btn:active { transform: scale(.96); }
 
     /* ── Mode pills ── */
     .mode-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 4px; }
@@ -209,9 +239,9 @@
       text-transform: uppercase; letter-spacing: .8px;
     }
     .toggle-btn {
-      font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer;
-      background: none; border: none; padding: 4px 8px;
-      border-radius: 8px; transition: background .15s;
+      font-size: 12px; font-weight: 600; color: var(--primary);
+      cursor: pointer; background: none; border: none;
+      padding: 4px 8px; border-radius: 8px; transition: background .15s;
     }
     .toggle-btn:hover { background: rgba(224,123,84,.1); }
     #yt-player iframe { width: 100% !important; border-radius: 10px; display: block; }
@@ -221,7 +251,7 @@
       background: #f0f7f4; border-radius: 10px;
     }
 
-    /* ── Diary view ── */
+    /* ── Diary ── */
     .diary-stats {
       display: flex; background: var(--surface); border-radius: var(--radius);
       padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow);
@@ -230,16 +260,14 @@
     .stat { text-align: center; }
     .stat-num { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1; }
     .stat-lbl { font-size: 11px; font-weight: 600; color: var(--text-lt); margin-top: 4px; text-transform: uppercase; letter-spacing: .6px; }
-    .stat-divider { width: 1px; height: 36px; background: var(--border); }
+    .stat-div  { width: 1px; height: 36px; background: var(--border); }
 
-    .diary-empty {
-      text-align: center; padding: 56px 20px; color: var(--text-lt);
-    }
+    .diary-empty { text-align: center; padding: 56px 20px; color: var(--text-lt); }
     .diary-empty-icon { font-size: 52px; margin-bottom: 18px; }
     .diary-empty h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-    .diary-empty p   { font-size: 14px; line-height: 1.7; }
+    .diary-empty p  { font-size: 14px; line-height: 1.7; }
 
-    .diary-period { margin-bottom: 28px; position: relative; }
+    .diary-period { margin-bottom: 28px; }
     .age-badge {
       display: inline-flex; align-items: center; gap: 8px;
       background: var(--primary); color: #fff;
@@ -252,8 +280,7 @@
     .diary-entry {
       background: #fff; border-radius: 12px; padding: 13px 14px;
       display: flex; align-items: center; gap: 12px;
-      box-shadow: var(--shadow); border: 2px solid transparent;
-      transition: border-color .15s;
+      box-shadow: var(--shadow); border: 2px solid transparent; transition: border-color .15s;
     }
     .diary-entry:hover { border-color: var(--border); }
     .diary-entry-icon {
@@ -268,7 +295,7 @@
     .diary-entry-date   { font-size: 11px; color: var(--text-lt); margin-top: 4px; }
     .diary-play-btn {
       background: none; border: 2px solid var(--border); border-radius: 8px;
-      cursor: pointer; color: var(--primary); font-size: 16px;
+      cursor: pointer; color: var(--primary); font-size: 14px;
       padding: 5px 9px; transition: all .15s; flex-shrink: 0;
     }
     .diary-play-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -278,17 +305,55 @@
       border-radius: 8px; transition: all .15s; flex-shrink: 0; font-weight: 700;
     }
     .diary-del-btn:hover { color: #e63946; background: rgba(230,57,70,.08); }
+
+    /* ── Install banner (shown on iOS) ── */
+    .install-banner {
+      background: var(--primary); color: #fff;
+      padding: 12px 16px; text-align: center;
+      font-size: 13px; font-weight: 500; line-height: 1.5;
+      display: none;
+    }
+    .install-banner.show { display: block; }
+    .install-banner strong { font-weight: 700; }
+    .install-banner .dismiss {
+      background: none; border: none; color: rgba(255,255,255,.7);
+      font-size: 18px; cursor: pointer; float: right; margin-top: -2px;
+    }
   </style>
 </head>
 <body>
 
-<!-- ── Setup Modal ────────────────────────────────────────────── -->
-<div id="setup-modal" class="modal-overlay hidden">
+<!-- ── iOS Install Banner ─────────────────────────────────────── -->
+<div class="install-banner" id="install-banner">
+  <button class="dismiss" onclick="this.parentElement.classList.remove('show')">✕</button>
+  Install this app: tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
+</div>
+
+<!-- ── Modal 1: Family Code ───────────────────────────────────── -->
+<div id="modal-code" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-icon">👨‍👩‍👧</div>
+    <h2>Join your family's diary</h2>
+    <p>Enter the shared family code to sync Aadritha's music diary across everyone's devices.<br><br>
+       First time? Make up any code and share it with family — like <em>aadritha2024</em>.</p>
+    <input id="code-input" class="modal-input" type="text"
+           placeholder="e.g. aadritha2024"
+           autocapitalize="none" autocorrect="off" spellcheck="false"
+           onkeydown="if(event.key==='Enter') submitCode()">
+    <div class="modal-err" id="code-err"></div>
+    <button id="code-btn" class="modal-btn" onclick="submitCode()">Join family</button>
+  </div>
+</div>
+
+<!-- ── Modal 2: Birth Date ────────────────────────────────────── -->
+<div id="modal-birth" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-icon">🎵</div>
     <h2>When was Aadritha born?</h2>
-    <p>We'll use this to track her musical journey — what she loved at each age.</p>
-    <input type="date" id="birth-input" class="modal-input">
+    <p>We'll use this to track what music she loved at each age — automatically.</p>
+    <input id="birth-input" class="modal-input" type="date"
+           onkeydown="if(event.key==='Enter') saveBirthDate()">
+    <div class="modal-err" id="birth-err"></div>
     <button class="modal-btn" onclick="saveBirthDate()">Start the journey</button>
   </div>
 </div>
@@ -297,18 +362,20 @@
 <header>
   <h1>Little Ears</h1>
   <p class="tagline">A world of music for Aadritha</p>
-  <div id="age-chip" class="age-chip hidden"></div>
+  <div class="header-meta">
+    <div id="age-chip"    class="age-chip hidden"></div>
+    <div id="family-chip" class="family-chip hidden"></div>
+  </div>
 </header>
 
 <div class="main">
 
-  <!-- View tabs -->
   <div class="view-tabs">
-    <button class="view-tab active" id="tab-songs" onclick="setView('songs')">🎵 Songs</button>
-    <button class="view-tab"        id="tab-diary" onclick="setView('diary')">📖 Music Diary</button>
+    <button class="view-tab active" id="tab-songs" onclick="setView('songs')">🎵  Songs</button>
+    <button class="view-tab"        id="tab-diary" onclick="setView('diary')">📖  Music Diary</button>
   </div>
 
-  <!-- ── Songs view ──────────────────────────────────────────── -->
+  <!-- ── Songs view ─────────────────────────────────────────── -->
   <div id="view-songs">
     <div class="categories" id="categories"></div>
 
@@ -331,7 +398,7 @@
       <button class="ctrl-btn" onclick="playPrev()" title="Previous">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
       </button>
-      <button class="play-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">
+      <button class="play-btn" id="btn-play" onclick="togglePlay()">
         <svg id="play-icon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       </button>
       <button class="ctrl-btn" onclick="playNext()" title="Next">
@@ -357,7 +424,10 @@
 
     <div class="player-section">
       <div class="player-header">
-        <h3>Video</h3>
+        <h3>
+          <span class="sync-dot synced" id="sync-dot"></span>
+          Video
+        </h3>
         <button class="toggle-btn" id="vid-toggle" onclick="toggleVideo()">Hide video</button>
       </div>
       <div id="vid-wrapper">
@@ -365,17 +435,29 @@
         <p class="audio-tip">Set your device face-down for audio-only listening</p>
       </div>
     </div>
-  </div><!-- #view-songs -->
+  </div>
 
-  <!-- ── Diary view ───────────────────────────────────────────── -->
+  <!-- ── Diary view ──────────────────────────────────────────── -->
   <div id="view-diary" style="display:none">
     <div id="diary-content"></div>
   </div>
 
-</div><!-- .main -->
+</div>
 
 <script>
-// ─── Song & Category Data ────────────────────────────────────────────────────
+// ─── Firebase Config ─────────────────────────────────────────────────────────
+
+firebase.initializeApp({
+  apiKey:            'AIzaSyCRmn3fT0oVjtfZ5iNHhAU34G07eIeUnqs',
+  authDomain:        'little-ears-a510d.firebaseapp.com',
+  projectId:         'little-ears-a510d',
+  storageBucket:     'little-ears-a510d.firebasestorage.app',
+  messagingSenderId: '602335706223',
+  appId:             '1:602335706223:web:dd1ca093d78573f1dbe19a',
+});
+const db = firebase.firestore();
+
+// ─── Song & Category Data ─────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { id:'all',      label:'🌍  All'              },
@@ -386,44 +468,42 @@ const CATEGORIES = [
   { id:'spanish',  label:'🌺  Spanish / Latin'   },
   { id:'celtic',   label:'☘️  Celtic / Irish'    },
 ];
-
 const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️' };
 const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish' };
 
 const ALL_SONGS = [
-  // English
-  { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english' },
-  { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english' },
-  { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english' },
-  { id:'-hqiivkU0fI', title:'Five Little Monkeys',          artist:'Super Simple Songs',    cat:'english' },
-  { id:'dHBT3NdO0mw', title:'Five Little Ducks',            artist:'Super Simple Songs',    cat:'english' },
-  { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',  artist:'Super Simple Songs',    cat:'english' },
-  { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',     artist:'Super Simple Songs',    cat:'english' },
-  // Indian Classical
-  { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',         artist:'M.S. Subbulakshmi',    cat:'indian'  },
-  { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',         artist:'M.S. Subbulakshmi',    cat:'indian'  },
-  { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',    artist:'M.S. Subbulakshmi',    cat:'indian'  },
-  // African
-  { id:'k03znbGf2vo', title:'Thula Sana',                   artist:'Zulu Lullaby',          cat:'african' },
-  { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',        artist:'African Lullabies',     cat:'african' },
-  { id:'10dXj51a_kg', title:'African Lullaby',              artist:'Jazz Lullabies',        cat:'african' },
-  // Japanese
-  { id:'Y3cPq5vmXng', title:'Donguri Korokoro',             artist:'どんぐりころころ',      cat:'japanese'},
-  { id:'3aYemty3pIc', title:'Japanese Songs Medley',        artist:'Traditional',           cat:'japanese'},
-  // Spanish
-  { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',           artist:'Canticos (bilingual)',  cat:'spanish' },
-  { id:'PyUkEF1dHW4', title:'Los Pollitos',                 artist:'Traditional Spanish',   cat:'spanish' },
-  // Celtic
-  { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',        artist:'Irish Lullaby',         cat:'celtic'  },
-  { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'  },
+  { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
+  { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english'  },
+  { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english'  },
+  { id:'-hqiivkU0fI', title:'Five Little Monkeys',          artist:'Super Simple Songs',    cat:'english'  },
+  { id:'dHBT3NdO0mw', title:'Five Little Ducks',            artist:'Super Simple Songs',    cat:'english'  },
+  { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',  artist:'Super Simple Songs',    cat:'english'  },
+  { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',     artist:'Super Simple Songs',    cat:'english'  },
+  { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',         artist:'M.S. Subbulakshmi',    cat:'indian'   },
+  { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',         artist:'M.S. Subbulakshmi',    cat:'indian'   },
+  { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',    artist:'M.S. Subbulakshmi',    cat:'indian'   },
+  { id:'k03znbGf2vo', title:'Thula Sana',                   artist:'Zulu Lullaby',          cat:'african'  },
+  { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',        artist:'African Lullabies',     cat:'african'  },
+  { id:'10dXj51a_kg', title:'African Lullaby',              artist:'Jazz Lullabies',        cat:'african'  },
+  { id:'Y3cPq5vmXng', title:'Donguri Korokoro',             artist:'どんぐりころころ',      cat:'japanese' },
+  { id:'3aYemty3pIc', title:'Japanese Songs Medley',        artist:'Traditional',           cat:'japanese' },
+  { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',           artist:'Canticos (bilingual)',  cat:'spanish'  },
+  { id:'PyUkEF1dHW4', title:'Los Pollitos',                 artist:'Traditional Spanish',   cat:'spanish'  },
+  { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',        artist:'Irish Lullaby',         cat:'celtic'   },
+  { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'   },
 ];
 
-// ─── Storage Keys ────────────────────────────────────────────────────────────
+// ─── Storage Keys ─────────────────────────────────────────────────────────────
 
+const KEY_CODE  = 'le_family_code';
 const KEY_BIRTH = 'le_birthdate';
 const KEY_DIARY = 'le_diary';
 
-// ─── Player State ─────────────────────────────────────────────────────────────
+// ─── App State ────────────────────────────────────────────────────────────────
+
+let familyCode    = null;
+let unsubFirestore = null;
+let isSyncing     = false;
 
 let player      = null;
 let playerReady = false;
@@ -438,32 +518,29 @@ let currentView = 'songs';
 
 // ─── Age Helpers ──────────────────────────────────────────────────────────────
 
-function getBirthDate() { return localStorage.getItem(KEY_BIRTH); }
+function getBirthDate()  { return localStorage.getItem(KEY_BIRTH); }
 
 function getAgeMonths() {
   const bd = getBirthDate();
   if (!bd) return null;
-  const birth = new Date(bd);
-  const now   = new Date();
-  let months  = (now.getFullYear() - birth.getFullYear()) * 12
-               + (now.getMonth()   - birth.getMonth());
-  if (now.getDate() < birth.getDate()) months--;
-  return Math.max(0, months);
+  const birth = new Date(bd), now = new Date();
+  let m = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  if (now.getDate() < birth.getDate()) m--;
+  return Math.max(0, m);
 }
 
-function ageLabel(months) {
-  if (months < 12) return `${months} month${months !== 1 ? 's' : ''}`;
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (m === 0) return `${y} year${y !== 1 ? 's' : ''}`;
-  return `${y} yr ${m} mo`;
+function ageLabel(m) {
+  if (m < 12) return `${m} month${m !== 1 ? 's' : ''}`;
+  const y = Math.floor(m / 12), mo = m % 12;
+  if (mo === 0) return `${y} year${y !== 1 ? 's' : ''}`;
+  return `${y} yr ${mo} mo`;
 }
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
 }
 
-// ─── Diary Storage ────────────────────────────────────────────────────────────
+// ─── Local + Firestore Diary ──────────────────────────────────────────────────
 
 function getDiary() {
   try { return JSON.parse(localStorage.getItem(KEY_DIARY) || '[]'); }
@@ -472,41 +549,30 @@ function getDiary() {
 
 function saveDiary(entries) {
   localStorage.setItem(KEY_DIARY, JSON.stringify(entries));
+  if (!familyCode) return;
+  setSyncing(true);
+  db.collection('families').doc(familyCode)
+    .set({ diary: entries }, { merge: true })
+    .then(() => setSyncing(false))
+    .catch(() => setSyncing(false));
 }
 
 function isLikedAtCurrentAge(videoId) {
   const m = getAgeMonths();
-  if (m === null) return false;
-  return getDiary().some(e => e.videoId === videoId && e.ageMonths === m);
+  return m !== null && getDiary().some(e => e.videoId === videoId && e.ageMonths === m);
 }
 
 function toggleLike(songIdx) {
   const song = songs[songIdx];
   if (!song) return;
-
   const m = getAgeMonths();
-  if (m === null) {
-    document.getElementById('setup-modal').classList.remove('hidden');
-    return;
-  }
-
+  if (m === null) { document.getElementById('modal-birth').classList.remove('hidden'); return; }
   let entries = getDiary();
   const existing = entries.findIndex(e => e.videoId === song.id && e.ageMonths === m);
-
-  if (existing >= 0) {
-    entries.splice(existing, 1);
-  } else {
-    entries.push({
-      videoId:   song.id,
-      title:     song.title,
-      artist:    song.artist,
-      cat:       song.cat,
-      ageMonths: m,
-      ageLabel:  ageLabel(m),
-      likedAt:   new Date().toISOString(),
-    });
-  }
-
+  if (existing >= 0) entries.splice(existing, 1);
+  else entries.push({ videoId:song.id, title:song.title, artist:song.artist,
+                      cat:song.cat, ageMonths:m, ageLabel:ageLabel(m),
+                      likedAt:new Date().toISOString() });
   saveDiary(entries);
   renderSongList();
   if (currentView === 'diary') renderDiaryView();
@@ -518,38 +584,121 @@ function deleteDiaryEntry(videoId, ageMonths) {
   renderSongList();
 }
 
-// ─── Render: Songs View ───────────────────────────────────────────────────────
+// ─── Sync UI ──────────────────────────────────────────────────────────────────
+
+function setSyncing(v) {
+  isSyncing = v;
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + (v ? 'syncing' : 'synced');
+}
+
+// ─── Firebase Connection ──────────────────────────────────────────────────────
+
+async function submitCode() {
+  const raw = document.getElementById('code-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+  if (raw.length < 3) { document.getElementById('code-err').textContent = 'Code must be at least 3 characters.'; return; }
+  const btn = document.getElementById('code-btn');
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  document.getElementById('code-err').textContent = '';
+  try {
+    await connectFamily(raw);
+  } catch (e) {
+    document.getElementById('code-err').textContent = 'Could not connect. Check your internet and try again.';
+    btn.textContent = 'Join family'; btn.disabled = false;
+  }
+}
+
+async function connectFamily(code) {
+  familyCode = code;
+  localStorage.setItem(KEY_CODE, code);
+
+  // Load initial snapshot
+  const snap = await db.collection('families').doc(code).get();
+  if (snap.exists) {
+    const d = snap.data();
+    if (d.birthDate) localStorage.setItem(KEY_BIRTH, d.birthDate);
+    if (d.diary)     localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+  }
+
+  // Subscribe for real-time updates from other family devices
+  if (unsubFirestore) unsubFirestore();
+  unsubFirestore = db.collection('families').doc(code).onSnapshot(doc => {
+    if (!doc.exists) return;
+    const d = doc.data();
+    if (d.birthDate) { localStorage.setItem(KEY_BIRTH, d.birthDate); updateHeaderChips(); }
+    if (d.diary) {
+      localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+      renderSongList();
+      if (currentView === 'diary') renderDiaryView();
+    }
+  }, () => {
+    document.getElementById('sync-dot').className = 'sync-dot offline';
+  });
+
+  document.getElementById('modal-code').classList.add('hidden');
+  updateHeaderChips();
+
+  if (!getBirthDate()) {
+    document.getElementById('modal-birth').classList.remove('hidden');
+  } else {
+    bootApp();
+  }
+}
+
+async function saveBirthDate() {
+  const val = document.getElementById('birth-input').value;
+  if (!val) { document.getElementById('birth-err').textContent = 'Please pick a date.'; return; }
+  localStorage.setItem(KEY_BIRTH, val);
+  if (familyCode) {
+    setSyncing(true);
+    await db.collection('families').doc(familyCode).set({ birthDate: val }, { merge: true });
+    setSyncing(false);
+  }
+  document.getElementById('modal-birth').classList.add('hidden');
+  updateHeaderChips();
+  bootApp();
+}
+
+// ─── Header Chips ─────────────────────────────────────────────────────────────
+
+function updateHeaderChips() {
+  const m    = getAgeMonths();
+  const age  = document.getElementById('age-chip');
+  const fam  = document.getElementById('family-chip');
+  if (m !== null) { age.textContent = `👶 ${ageLabel(m)} old`; age.classList.remove('hidden'); }
+  if (familyCode) { fam.innerHTML = `<span class="sync-dot synced"></span>${familyCode}`; fam.classList.remove('hidden'); }
+}
+
+// ─── Render: Songs ────────────────────────────────────────────────────────────
 
 function renderCategories() {
   document.getElementById('categories').innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-btn ${c.id === currentCat ? 'active' : ''}" onclick="setCategory('${c.id}')">${c.label}</button>`
+    `<button class="cat-btn ${c.id===currentCat?'active':''}" onclick="setCategory('${c.id}')">${c.label}</button>`
   ).join('');
 }
 
 function renderSongList() {
   document.getElementById('song-list').innerHTML = songs.map((s, i) => {
     const liked = isLikedAtCurrentAge(s.id);
-    return `
-      <div class="song-item ${i === currentIdx ? 'active' : ''}" onclick="selectSong(${i})">
-        <div class="song-num">${i === currentIdx ? (isPlaying ? '▶' : '❚❚') : i + 1}</div>
-        <div class="song-item-info">
-          <div class="song-item-title">${s.title}</div>
-          <div class="song-item-artist">${s.artist}</div>
-        </div>
-        <span class="song-item-tag">${CAT_EMOJI[s.cat] || '🎵'} ${CAT_LABEL[s.cat] || s.cat}</span>
-        <button class="heart-btn" onclick="event.stopPropagation(); toggleLike(${i})"
-                title="${liked ? 'Remove from diary' : 'Add to diary at current age'}">${liked ? '❤️' : '🤍'}</button>
-      </div>`;
+    return `<div class="song-item ${i===currentIdx?'active':''}" onclick="selectSong(${i})">
+      <div class="song-num">${i===currentIdx?(isPlaying?'▶':'❚❚'):i+1}</div>
+      <div class="song-item-info">
+        <div class="song-item-title">${s.title}</div>
+        <div class="song-item-artist">${s.artist}</div>
+      </div>
+      <span class="song-item-tag">${CAT_EMOJI[s.cat]||'🎵'} ${CAT_LABEL[s.cat]||s.cat}</span>
+      <button class="heart-btn" onclick="event.stopPropagation();toggleLike(${i})"
+              title="${liked?'Remove from diary':'Add to diary'}">${liked?'❤️':'🤍'}</button>
+    </div>`;
   }).join('');
 }
 
 function renderNowPlaying() {
-  const s = songs[currentIdx];
-  if (!s) return;
+  const s = songs[currentIdx]; if (!s) return;
   document.getElementById('np-title').textContent  = s.title;
   document.getElementById('np-artist').textContent = s.artist;
-  document.getElementById('np-cat').textContent    = `${CAT_EMOJI[s.cat] || '🎵'} ${CAT_LABEL[s.cat] || s.cat}`;
-  document.getElementById('album-art').textContent = CAT_EMOJI[s.cat] || '🎵';
+  document.getElementById('np-cat').textContent    = `${CAT_EMOJI[s.cat]||'🎵'} ${CAT_LABEL[s.cat]||s.cat}`;
+  document.getElementById('album-art').textContent = CAT_EMOJI[s.cat]||'🎵';
   document.getElementById('album-art').classList.toggle('playing', isPlaying);
 }
 
@@ -568,82 +717,58 @@ function renderModes() {
 
 function render() { renderNowPlaying(); renderPlayBtn(); renderSongList(); }
 
-// ─── Render: Diary View ───────────────────────────────────────────────────────
+// ─── Render: Diary ────────────────────────────────────────────────────────────
 
 function renderDiaryView() {
-  const el      = document.getElementById('diary-content');
+  const el = document.getElementById('diary-content');
   const entries = getDiary();
-
-  if (entries.length === 0) {
-    el.innerHTML = `
-      <div class="diary-empty">
-        <div class="diary-empty-icon">📖</div>
-        <h3>The diary is empty</h3>
-        <p>Tap the 🤍 on any song while playing<br>to save it to Aadritha's music diary.<br><br>Her age is recorded automatically so you<br>can look back at what she loved over time.</p>
-      </div>`;
+  if (!entries.length) {
+    el.innerHTML = `<div class="diary-empty"><div class="diary-empty-icon">📖</div>
+      <h3>The diary is empty</h3>
+      <p>Tap the 🤍 on any song to save it<br>to Aadritha's music diary.<br><br>
+      Her age is recorded automatically so you<br>can look back at every stage of her musical journey.</p></div>`;
     return;
   }
-
-  // Stats
-  const totalSongs = entries.length;
-  const ageMilestones = new Set(entries.map(e => e.ageMonths)).size;
   const catCounts = {};
-  entries.forEach(e => { catCounts[e.cat] = (catCounts[e.cat] || 0) + 1; });
-  const topCat = Object.entries(catCounts).sort((a,b) => b[1]-a[1])[0];
-  const topCatLabel = topCat ? `${CAT_EMOJI[topCat[0]] || '🎵'} ${CAT_LABEL[topCat[0]] || topCat[0]}` : '–';
-
-  // Group by ageMonths, newest first
-  const grouped = {};
+  entries.forEach(e => { catCounts[e.cat] = (catCounts[e.cat]||0)+1; });
+  const topCat   = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0];
+  const topLabel = topCat ? `${CAT_EMOJI[topCat[0]]||'🎵'} ${CAT_LABEL[topCat[0]]||topCat[0]}` : '–';
+  const grouped  = {};
   entries.forEach(e => {
-    if (!grouped[e.ageMonths]) grouped[e.ageMonths] = { label: e.ageLabel, entries: [] };
+    if (!grouped[e.ageMonths]) grouped[e.ageMonths] = { label:e.ageLabel, entries:[] };
     grouped[e.ageMonths].entries.push(e);
   });
-  const sortedAges = Object.keys(grouped).map(Number).sort((a, b) => b - a);
-
+  const sorted = Object.keys(grouped).map(Number).sort((a,b)=>b-a);
   el.innerHTML = `
     <div class="diary-stats">
-      <div class="stat">
-        <div class="stat-num">${totalSongs}</div>
-        <div class="stat-lbl">songs loved</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num">${ageMilestones}</div>
-        <div class="stat-lbl">age milestone${ageMilestones !== 1 ? 's' : ''}</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num" style="font-size:18px">${topCatLabel}</div>
-        <div class="stat-lbl">top category</div>
-      </div>
+      <div class="stat"><div class="stat-num">${entries.length}</div><div class="stat-lbl">songs loved</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-num">${sorted.length}</div><div class="stat-lbl">age milestone${sorted.length!==1?'s':''}</div></div>
+      <div class="stat-div"></div>
+      <div class="stat"><div class="stat-num" style="font-size:18px">${topLabel}</div><div class="stat-lbl">top style</div></div>
     </div>
-
-    ${sortedAges.map(age => {
+    ${sorted.map(age => {
       const g = grouped[age];
-      const firstDate = g.entries.slice().sort((a,b) => new Date(a.likedAt)-new Date(b.likedAt))[0];
-      const monthYear = new Date(firstDate.likedAt).toLocaleDateString('en-IN', { month:'long', year:'numeric' });
-      return `
-        <div class="diary-period">
-          <div class="age-badge">🎂 ${g.label}</div>
-          <div class="age-period-date">${monthYear}</div>
-          <div class="diary-entries">
-            ${g.entries.map(entry => `
-              <div class="diary-entry">
-                <div class="diary-entry-icon">${CAT_EMOJI[entry.cat] || '🎵'}</div>
-                <div class="diary-entry-info">
-                  <div class="diary-entry-title">${entry.title}</div>
-                  <div class="diary-entry-artist">${entry.artist}</div>
-                  <div class="diary-entry-date">Saved on ${formatDate(entry.likedAt)}</div>
-                </div>
-                <button class="diary-play-btn" onclick="playFromDiary('${entry.videoId}')" title="Play">▶</button>
-                <button class="diary-del-btn"  onclick="deleteDiaryEntry('${entry.videoId}', ${entry.ageMonths})" title="Remove">✕</button>
-              </div>`).join('')}
-          </div>
-        </div>`;
+      const monthYear = new Date(g.entries[0].likedAt).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+      return `<div class="diary-period">
+        <div class="age-badge">🎂 ${g.label}</div>
+        <div class="age-period-date">${monthYear}</div>
+        <div class="diary-entries">
+          ${g.entries.map(e=>`
+            <div class="diary-entry">
+              <div class="diary-entry-icon">${CAT_EMOJI[e.cat]||'🎵'}</div>
+              <div class="diary-entry-info">
+                <div class="diary-entry-title">${e.title}</div>
+                <div class="diary-entry-artist">${e.artist}</div>
+                <div class="diary-entry-date">Saved on ${formatDate(e.likedAt)}</div>
+              </div>
+              <button class="diary-play-btn" onclick="playFromDiary('${e.videoId}')" title="Play">▶</button>
+              <button class="diary-del-btn"  onclick="deleteDiaryEntry('${e.videoId}',${e.ageMonths})" title="Remove">✕</button>
+            </div>`).join('')}
+        </div>
+      </div>`;
     }).join('')}`;
 }
-
-// ─── Diary: Play from diary ───────────────────────────────────────────────────
 
 function playFromDiary(videoId) {
   setCategory('all');
@@ -652,142 +777,122 @@ function playFromDiary(videoId) {
   if (idx >= 0) selectSong(idx);
 }
 
-// ─── View Switching ───────────────────────────────────────────────────────────
+// ─── View / Category ──────────────────────────────────────────────────────────
 
 function setView(view) {
   currentView = view;
-  document.getElementById('view-songs').style.display = view === 'songs' ? 'block' : 'none';
-  document.getElementById('view-diary').style.display = view === 'diary' ? 'block' : 'none';
-  document.getElementById('tab-songs').classList.toggle('active', view === 'songs');
-  document.getElementById('tab-diary').classList.toggle('active', view === 'diary');
-  if (view === 'diary') renderDiaryView();
+  document.getElementById('view-songs').style.display = view==='songs' ? 'block' : 'none';
+  document.getElementById('view-diary').style.display = view==='diary' ? 'block' : 'none';
+  document.getElementById('tab-songs').classList.toggle('active', view==='songs');
+  document.getElementById('tab-diary').classList.toggle('active', view==='diary');
+  if (view==='diary') renderDiaryView();
 }
-
-// ─── Age Chip ─────────────────────────────────────────────────────────────────
-
-function updateAgeChip() {
-  const m    = getAgeMonths();
-  const chip = document.getElementById('age-chip');
-  if (m !== null) {
-    chip.textContent = `👶 Aadritha · ${ageLabel(m)} old`;
-    chip.classList.remove('hidden');
-  } else {
-    chip.classList.add('hidden');
-  }
-}
-
-// ─── Setup ────────────────────────────────────────────────────────────────────
-
-function saveBirthDate() {
-  const val = document.getElementById('birth-input').value;
-  if (!val) { alert('Please pick a date.'); return; }
-  localStorage.setItem(KEY_BIRTH, val);
-  document.getElementById('setup-modal').classList.add('hidden');
-  updateAgeChip();
-  renderSongList();
-}
-
-// ─── Song Actions ─────────────────────────────────────────────────────────────
 
 function setCategory(cat) {
   currentCat = cat;
-  songs      = cat === 'all' ? [...ALL_SONGS] : ALL_SONGS.filter(s => s.cat === cat);
+  songs = cat==='all' ? [...ALL_SONGS] : ALL_SONGS.filter(s=>s.cat===cat);
   currentIdx = 0;
   renderCategories();
   render();
 }
 
-function selectSong(idx) {
-  currentIdx = idx;
-  loadAndPlay(songs[idx].id);
-}
+// ─── Player Actions ───────────────────────────────────────────────────────────
 
-function loadAndPlay(videoId) {
-  if (!playerReady) return;
-  player.loadVideoById(videoId);
-  isPlaying = true;
-  render();
-}
+function selectSong(idx)  { currentIdx=idx; loadAndPlay(songs[idx].id); }
+function loadAndPlay(vid) { if (!playerReady) return; player.loadVideoById(vid); isPlaying=true; render(); }
 
 function togglePlay() {
-  if (!playerReady || songs.length === 0) return;
-  const state = player.getPlayerState();
-  if (state === YT.PlayerState.PLAYING) {
-    player.pauseVideo();
-  } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED) {
-    player.playVideo();
-  } else {
-    loadAndPlay(songs[currentIdx].id);
-  }
+  if (!playerReady||!songs.length) return;
+  const s = player.getPlayerState();
+  if (s===YT.PlayerState.PLAYING)               player.pauseVideo();
+  else if (s===YT.PlayerState.PAUSED||s===YT.PlayerState.CUED) player.playVideo();
+  else loadAndPlay(songs[currentIdx].id);
 }
 
 function playNext() {
   if (!songs.length) return;
-  if (isShuffle) {
-    let n; do { n = Math.floor(Math.random() * songs.length); } while (songs.length > 1 && n === currentIdx);
-    currentIdx = n;
-  } else {
-    currentIdx = (currentIdx + 1) % songs.length;
-  }
+  if (isShuffle) { let n; do { n=Math.floor(Math.random()*songs.length); } while (songs.length>1&&n===currentIdx); currentIdx=n; }
+  else currentIdx=(currentIdx+1)%songs.length;
   loadAndPlay(songs[currentIdx].id);
 }
 
 function playPrev() {
   if (!songs.length) return;
-  currentIdx = (currentIdx - 1 + songs.length) % songs.length;
+  currentIdx=(currentIdx-1+songs.length)%songs.length;
   loadAndPlay(songs[currentIdx].id);
 }
 
-function toggleShuffle() { isShuffle = !isShuffle; renderModes(); }
-function toggleRepeat()  { isRepeat  = !isRepeat;  renderModes(); }
+function toggleShuffle() { isShuffle=!isShuffle; renderModes(); }
+function toggleRepeat()  { isRepeat =!isRepeat;  renderModes(); }
 
 function toggleVideo() {
-  vidHidden = !vidHidden;
-  document.getElementById('vid-wrapper').style.display = vidHidden ? 'none' : 'block';
-  document.getElementById('vid-toggle').textContent   = vidHidden ? 'Show video' : 'Hide video';
+  vidHidden=!vidHidden;
+  document.getElementById('vid-wrapper').style.display=vidHidden?'none':'block';
+  document.getElementById('vid-toggle').textContent=vidHidden?'Show video':'Hide video';
 }
 
 // ─── YouTube IFrame API ───────────────────────────────────────────────────────
 
-(function() {
-  var tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  document.head.appendChild(tag);
-})();
+(function(){ var t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; document.head.appendChild(t); })();
 
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('yt-player', {
-    height: '210', width: '100%',
-    playerVars: { autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
-    events: {
-      onReady: function() { playerReady = true; },
-      onStateChange: function(e) {
-        if (e.data === YT.PlayerState.PLAYING) { isPlaying = true;  render(); }
-        if (e.data === YT.PlayerState.PAUSED)  { isPlaying = false; render(); }
-        if (e.data === YT.PlayerState.ENDED) {
-          if (isRepeat) { player.seekTo(0); player.playVideo(); }
-          else playNext();
-        }
+    height:'210', width:'100%',
+    playerVars:{ autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
+    events:{
+      onReady: ()=>{ playerReady=true; },
+      onStateChange: e=>{
+        if (e.data===YT.PlayerState.PLAYING){ isPlaying=true;  render(); }
+        if (e.data===YT.PlayerState.PAUSED) { isPlaying=false; render(); }
+        if (e.data===YT.PlayerState.ENDED)  { isRepeat ? (player.seekTo(0),player.playVideo()) : playNext(); }
       },
     },
   });
 }
 
+// ─── iOS install hint ─────────────────────────────────────────────────────────
+
+function showIOSHint() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  if (isIOS && !isStandalone) {
+    document.getElementById('install-banner').classList.add('show');
+  }
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
-(function init() {
-  // Set max date on birth input to today
-  document.getElementById('birth-input').max = new Date().toISOString().split('T')[0];
-
-  // Show setup modal only if birth date not saved
-  if (!getBirthDate()) {
-    document.getElementById('setup-modal').classList.remove('hidden');
-  }
-
-  updateAgeChip();
+function bootApp() {
+  updateHeaderChips();
   renderCategories();
   renderModes();
   render();
+}
+
+(function init() {
+  document.getElementById('birth-input').max = new Date().toISOString().split('T')[0];
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+
+  showIOSHint();
+
+  const code = localStorage.getItem(KEY_CODE);
+  if (code) {
+    // Restore local data immediately (works offline)
+    familyCode = code;
+    bootApp();
+    // Show birth date modal if missing
+    if (!getBirthDate()) document.getElementById('modal-birth').classList.remove('hidden');
+    // Then sync with Firestore in background
+    connectFamily(code).catch(() => {
+      document.getElementById('sync-dot').className = 'sync-dot offline';
+    });
+  } else {
+    document.getElementById('modal-code').classList.remove('hidden');
+  }
 })();
 </script>
 </body>
