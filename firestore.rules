@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /families/{familyCode} {
+      allow read: if isValidFamilyCode(familyCode);
+      allow write: if isValidFamilyCode(familyCode)
+        && request.resource.data.keys().hasOnly(['diary', 'customSongs', 'hiddenSongs', 'birthDate'])
+        && validDiary(request.resource.data.diary)
+        && validCustomSongs(request.resource.data.customSongs)
+        && validHiddenSongs(request.resource.data.hiddenSongs)
+        && validBirthDate(request.resource.data.birthDate);
+    }
+
+    function isValidFamilyCode(code) {
+      return code.matches('^[a-z0-9-]{3,48}$');
+    }
+
+    function validBirthDate(value) {
+      return value == null || value is string;
+    }
+
+    function validHiddenSongs(value) {
+      return value == null || (value is list && value.size() <= 200);
+    }
+
+    function validDiary(value) {
+      return value == null || (value is list && value.size() <= 1000);
+    }
+
+    function validCustomSongs(value) {
+      return value == null || (value is list && value.size() <= 500);
+    }
+  }
+}
