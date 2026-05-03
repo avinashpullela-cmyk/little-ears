@@ -1599,13 +1599,59 @@ function formatDate(iso) {
 
 // ─── Diary ────────────────────────────────────────────────────────────────────
 
+function setDiaryLocal(entries) {
+  localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(entries));
+  localStorage.setItem(storageKey(`${KEY_DIARY}_backup`), JSON.stringify({
+    savedAt: new Date().toISOString(),
+    entries
+  }));
+}
+
+function migrateLegacyDiaryIfNeeded() {
+  if (activeChildId !== 'aadritha') return;
+  const childKey = storageKey(KEY_DIARY);
+  const legacy = localStorage.getItem(KEY_DIARY);
+  if (!localStorage.getItem(childKey) && legacy) {
+    localStorage.setItem(childKey, legacy);
+    localStorage.setItem(storageKey(`${KEY_DIARY}_migrated_at`), new Date().toISOString());
+  }
+}
+
 function getDiary() {
   try { return JSON.parse(localStorage.getItem(storageKey(KEY_DIARY)) || '[]'); }
   catch { return []; }
 }
 
+function diaryEntryKey(entry) {
+  return `${entry.songId || entry.videoId || entry.title}|${entry.ageMonths}`;
+}
+
+function mergeDiaryEntries(localEntries, remoteEntries) {
+  const merged = new Map();
+  [...(remoteEntries || []), ...(localEntries || [])].forEach(entry => {
+    if (!entry || entry.ageMonths === undefined) return;
+    const key = diaryEntryKey(entry);
+    const existing = merged.get(key);
+    if (!existing || new Date(entry.likedAt || 0) >= new Date(existing.likedAt || 0)) {
+      merged.set(key, entry);
+    }
+  });
+  return [...merged.values()].sort((a, b) => new Date(a.likedAt || 0) - new Date(b.likedAt || 0));
+}
+
+function reconcileDiaryFromRemote(remoteEntries, syncBack = false) {
+  const localEntries = getDiary();
+  const merged = mergeDiaryEntries(localEntries, Array.isArray(remoteEntries) ? remoteEntries : []);
+  setDiaryLocal(merged);
+  const remoteLength = Array.isArray(remoteEntries) ? remoteEntries.length : 0;
+  if (syncBack && merged.length > remoteLength) {
+    syncWrite(childDoc().set({ diary: merged }, { merge: true }), 'Diary restored');
+  }
+  return merged;
+}
+
 function saveDiary(entries) {
-  localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(entries));
+  setDiaryLocal(entries);
   syncWrite(childDoc().set({ diary: entries }, { merge: true }), 'Diary synced');
 }
 
@@ -1668,6 +1714,7 @@ function setSyncing(v, offline = false) {
 // ─── Firebase connection ──────────────────────────────────────────────────────
 
 function loadChildLocalState() {
+  migrateLegacyDiaryIfNeeded();
   try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_CUSTOM)) || '[]'); } catch { CUSTOM_SONGS  = []; }
   try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_HIDDEN)) || '[]'); } catch { HIDDEN_SONGS  = []; }
   playCounts = getPlayCounts();
@@ -1681,7 +1728,7 @@ async function connectChild() {
   const snap = await childDoc().get();
   if (snap.exists) {
     const d = snap.data();
-    if (d.diary)       localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(d.diary));
+    if (d.diary !== undefined) reconcileDiaryFromRemote(d.diary, true);
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
       localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
@@ -1704,7 +1751,7 @@ async function connectChild() {
     if (!doc.exists) return;
     const d = doc.data();
     let needsRender = false;
-    if (d.diary) { localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(d.diary)); needsRender = true; }
+    if (d.diary !== undefined) { reconcileDiaryFromRemote(d.diary, true); needsRender = true; }
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
       localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
