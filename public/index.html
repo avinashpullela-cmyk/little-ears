@@ -554,6 +554,38 @@
     .export-diary-btn { background: var(--primary); }
     .log-memory-btn:hover, .export-diary-btn:hover { opacity: .85; }
 
+    .weekly-moment {
+      background: #fff; border-radius: var(--radius); padding: 16px;
+      box-shadow: var(--shadow); margin-bottom: 18px; border: 2px solid rgba(129,178,154,.28);
+    }
+    .weekly-moment-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .weekly-moment-title { font-size: 16px; font-weight: 800; color: var(--text); }
+    .weekly-moment-subtitle { font-size: 12px; color: var(--text-lt); margin-top: 3px; line-height: 1.45; }
+    .weekly-moment-form {
+      display: grid; grid-template-columns: minmax(132px, 170px) 1fr auto;
+      gap: 10px; align-items: stretch;
+    }
+    .weekly-moment-date,
+    .weekly-moment-input {
+      width: 100%; border: 2px solid var(--border); border-radius: 12px;
+      background: var(--surface); color: var(--text); outline: none;
+      font-size: 14px; padding: 10px 12px;
+    }
+    .weekly-moment-input { min-height: 44px; resize: vertical; line-height: 1.4; }
+    .weekly-moment-date:focus,
+    .weekly-moment-input:focus { border-color: var(--secondary); background: #fff; }
+    .weekly-moment-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--secondary); color: #fff; border: none; border-radius: 12px;
+      padding: 0 16px; font-size: 13px; font-weight: 800; cursor: pointer;
+      min-height: 44px; white-space: nowrap;
+    }
+    .weekly-moment-btn:hover { opacity: .88; }
+    .weekly-moment-err { font-size: 12px; color: #e63946; min-height: 16px; margin-top: 8px; }
+
     /* ── Retro badge on diary entries ── */
     .retro-badge {
       font-size: 10px; font-weight: 700; color: var(--secondary);
@@ -665,6 +697,8 @@
       .section-row { align-items: flex-start; gap: 8px; }
       .section-actions { flex-wrap: wrap; justify-content: flex-end; }
       .diary-stats { padding: 16px 12px; }
+      .weekly-moment-form { grid-template-columns: 1fr; }
+      .weekly-moment-btn { width: 100%; }
       .stat-num { font-size: 22px; }
       .diary-entry { align-items: flex-start; }
     }
@@ -887,6 +921,21 @@
       <span id="child-hero-name-text">Aadritha</span>
       <span class="child-hero-age" id="child-hero-age"></span>
     </div>
+  </div>
+
+  <div class="weekly-moment" id="weekly-moment-panel">
+    <div class="weekly-moment-head">
+      <div>
+        <div class="weekly-moment-title" id="weekly-moment-title">Best moment of the week with Aadritha</div>
+        <div class="weekly-moment-subtitle">Add a tiny highlight from this week. It will appear in the Music Diary with the date.</div>
+      </div>
+    </div>
+    <div class="weekly-moment-form">
+      <input id="weekly-moment-date" class="weekly-moment-date" type="date" aria-label="Best moment date">
+      <textarea id="weekly-moment-text" class="weekly-moment-input" placeholder="e.g. She giggled when everyone clapped after dinner." aria-label="Best moment of the week"></textarea>
+      <button class="weekly-moment-btn" onclick="submitWeeklyMoment()">Save moment</button>
+    </div>
+    <div class="weekly-moment-err" id="weekly-moment-err"></div>
   </div>
 
   <div class="view-tabs">
@@ -1494,6 +1543,20 @@ function onMemoryDateChange(val) {
   }
 }
 
+function renderWeeklyMomentPanel() {
+  const title = document.getElementById('weekly-moment-title');
+  const dateEl = document.getElementById('weekly-moment-date');
+  const errEl = document.getElementById('weekly-moment-err');
+  if (!title || !dateEl) return;
+  title.textContent = `Best moment of the week with ${currentChild().name}`;
+  dateEl.min = getBirthDate();
+  dateEl.max = todayIso();
+  if (!dateEl.value || dateEl.value < dateEl.min || dateEl.value > dateEl.max) {
+    dateEl.value = todayIso();
+  }
+  if (errEl) errEl.textContent = '';
+}
+
 function submitLogMemory() {
   const dateVal = document.getElementById('memory-date').value;
   const note    = document.getElementById('memory-note').value.trim();
@@ -1534,6 +1597,45 @@ function submitLogMemory() {
   closeMemoryModal();
   setView('diary');
   renderDiaryView();
+  renderSongList();
+}
+
+function submitWeeklyMoment() {
+  const dateEl = document.getElementById('weekly-moment-date');
+  const textEl = document.getElementById('weekly-moment-text');
+  const errEl = document.getElementById('weekly-moment-err');
+  const dateVal = dateEl.value;
+  const note = textEl.value.trim();
+
+  errEl.textContent = '';
+  if (!dateVal) { errEl.textContent = 'Please pick the moment date.'; return; }
+  if (!note) { errEl.textContent = `Please write the moment you want to remember for ${currentChild().name}.`; return; }
+
+  const m = getAgeMonthsAt(dateVal);
+  if (m === null) { errEl.textContent = 'Date is before her birth date — please pick a later date.'; return; }
+
+  const entries = getDiary();
+  entries.push({
+    songId:    `weekly_${Date.now()}`,
+    videoId:   null,
+    title:     'Best moment of the week',
+    artist:    `${currentChild().name}'s family`,
+    cat:       'memory',
+    note,
+    isCustom:  false,
+    isMemoryOnly: true,
+    isWeeklyMoment: true,
+    ageMonths: m,
+    ageLabel:  ageLabel(m),
+    likedAt:   new Date(dateVal).toISOString(),
+  });
+
+  saveDiary(entries);
+  textEl.value = '';
+  dateEl.value = todayIso();
+  errEl.textContent = '';
+  showToast('Best moment saved to the diary', 'success');
+  if (currentView === 'diary') renderDiaryView();
   renderSongList();
 }
 
@@ -2186,9 +2288,10 @@ function renderDiaryView() {
               <div class="diary-entry-info">
                 <div class="diary-entry-title">${escapeHtml(e.title)}</div>
                 <div class="diary-entry-artist">${escapeHtml(e.artist || '')}</div>
-                ${e.note ? `<div class="diary-entry-note">${isMemoryOnly ? '🖼️' : '💬'} ${escapeHtml(e.note)}</div>` : ''}
+                ${e.note ? `<div class="diary-entry-note">${e.isWeeklyMoment ? '⭐' : (isMemoryOnly ? '🖼️' : '💬')} ${escapeHtml(e.note)}</div>` : ''}
+                ${e.isWeeklyMoment ? `<span class="retro-badge">⭐ Best moment of the week</span>` : ''}
                 ${e.isRetro ? `<span class="retro-badge">📅 Logged retroactively</span>` : ''}
-                <div class="diary-entry-date">Saved on ${formatDate(e.likedAt)}</div>
+                <div class="diary-entry-date">${e.isWeeklyMoment ? 'Moment date' : 'Saved on'} ${formatDate(e.likedAt)}</div>
               </div>
               <button class="diary-play-btn" ${!hasVid?'disabled title="No YouTube link"':''} onclick="playFromDiary('${safeJsArg(e.songId)}')">▶</button>
               <button class="diary-del-btn"  onclick="deleteDiaryEntry('${safeJsArg(e.songId)}',${e.ageMonths})">✕</button>
@@ -2395,6 +2498,7 @@ function bootApp() {
   document.title = `Little Ears – ${currentChild().name}`;
   refreshFilteredSongs();
   updateHeaderChips();
+  renderWeeklyMomentPanel();
   renderCategories();
   renderModes();
   render();
