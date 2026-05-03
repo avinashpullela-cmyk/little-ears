@@ -336,6 +336,52 @@
     }
     .search-empty span { font-size: 32px; display: block; margin-bottom: 8px; }
 
+    /* ── Family poll / reactions / milestones ── */
+    .poll-panel, .milestone-panel {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 16px; margin: 8px 0 14px; box-shadow: var(--shadow);
+    }
+    .poll-head, .milestone-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 12px;
+    }
+    .poll-title, .milestone-title {
+      font-size: 13px; font-weight: 800; color: var(--text);
+    }
+    .poll-subtitle, .milestone-subtitle {
+      font-size: 12px; color: var(--text-lt); margin-top: 2px; line-height: 1.4;
+    }
+    .poll-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .poll-option {
+      border: 2px solid var(--border); background: var(--bg); color: var(--text);
+      border-radius: 12px; padding: 10px; text-align: left; cursor: pointer;
+      transition: all .16s; min-width: 0;
+    }
+    .poll-option:hover, .poll-option.voted { border-color: var(--primary); background: #fff8f5; }
+    body.bedtime .poll-option:hover, body.bedtime .poll-option.voted { background: #303959; }
+    .poll-song { font-size: 12px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .poll-votes { font-size: 11px; color: var(--text-lt); margin-top: 4px; }
+    .poll-bar { height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 7px; }
+    .poll-fill { height: 100%; background: var(--primary); border-radius: 999px; }
+    .reaction-row { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+    .reaction-btn {
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-lt);
+      border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: all .15s; line-height: 1;
+    }
+    .reaction-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+    .milestone-river { display: flex; gap: 10px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+    .milestone-river::-webkit-scrollbar { display: none; }
+    .milestone-stone {
+      min-width: 156px; background: var(--bg); border: 2px solid var(--border);
+      border-radius: 14px; padding: 12px; position: relative;
+    }
+    .milestone-dot { font-size: 24px; line-height: 1; margin-bottom: 8px; }
+    .milestone-age { font-size: 11px; color: var(--primary); font-weight: 800; text-transform: uppercase; }
+    .milestone-date { font-size: 11px; color: var(--text-lt); margin-top: 2px; }
+    .milestone-copy { font-size: 12px; color: var(--text); font-weight: 700; margin-top: 4px; line-height: 1.35; }
+    .milestone-empty { font-size: 12px; color: var(--text-lt); line-height: 1.55; }
+
     /* ── Song list ── */
     .song-list { display: flex; flex-direction: column; gap: 6px; }
     .song-item {
@@ -539,6 +585,8 @@
     }
 
     @media (max-width: 520px) {
+      .poll-options { grid-template-columns: 1fr; }
+      .poll-panel, .milestone-panel { padding: 14px; }
       .now-playing { align-items: flex-start; }
       .song-item { padding: 12px 10px; gap: 8px; }
       .song-item-tag { display: none; }
@@ -772,6 +820,10 @@
 
   <!-- ── Songs view ─────────────────────────────────────────── -->
   <div id="view-songs">
+    <div id="milestone-panel"></div>
+
+    <div id="poll-panel"></div>
+
     <div class="categories" id="categories"></div>
 
     <div class="now-playing">
@@ -889,6 +941,25 @@ const CHILDREN = {
     subtitle: 'Toddler songs',
     birthDate: '2025-01-14',
     tagline: 'A world of music for Aadritha',
+    milestones: [
+      { icon:'🌟', label:'Birth', date:'2025-01-14' },
+      { icon:'😊', label:'First smile I saw', date:'2025-01-23' },
+      { icon:'🎊', label:'Uyyala Function', date:'2025-01-25' },
+      { icon:'📸', label:'First Photoshoot', date:'2025-01-26' },
+      { icon:'💪', label:'First Tummy time', date:'2025-01-29' },
+      { icon:'💉', label:'First Vaccine', date:'2025-03-17' },
+      { icon:'🌿', label:'First Ugadi', date:'2025-03-30' },
+      { icon:'😄', label:'First giggles', date:'2025-04-01' },
+      { icon:'🛒', label:'First time in stroller', date:'2025-04-25' },
+      { icon:'🏬', label:'First visit to a shop (Walmart)', date:'2025-05-04' },
+      { icon:'🌳', label:'First park visit', date:'2025-05-19' },
+      { icon:'💉', label:'Second Vaccine', date:'2025-05-20' },
+      { icon:'🍚', label:'Annaprasana', date:'2025-06-05' },
+      { icon:'💉', label:'Third Vaccine', date:'2025-07-22' },
+      { icon:'🔄', label:'Borlapadina Roju', date:'2025-07-27' },
+      { icon:'💉', label:'Fourth vaccine', date:'2026-01-15' },
+      { icon:'🐾', label:'First time Crawling', date:'2026-04-08' },
+    ],
     songs: [
       { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
       { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english'  },
@@ -914,8 +985,9 @@ const CHILDREN = {
   aanya: {
     name: 'Aanya',
     subtitle: '4.5 year old songs',
-    birthDate: '2021-11-02',
+    birthDate: '2021-09-30',
     tagline: 'Sing, dance, and learn with Aanya',
+    milestones: [],
     songs: [
       { id:'L0MK7qz13bU', title:'Let It Go',                    artist:'Frozen',                 cat:'disney'   },
       { id:'YVVTZgwYwVo', title:"How Far I'll Go",              artist:'Moana',                  cat:'disney'   },
@@ -951,6 +1023,8 @@ const KEY_CUSTOM = 'le_custom_songs';
 const KEY_HIDDEN = 'le_hidden_songs';
 const KEY_BEDTIME = 'le_bedtime';
 const KEY_PLAYS = 'le_play_counts';
+const KEY_REACTIONS = 'le_song_reactions';
+const KEY_POLL = 'le_song_poll';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
@@ -976,6 +1050,8 @@ let quickFilter = 'all';
 let lastToastTimer = null;
 let pendingConfirm = null;
 let playCounts = {};
+let songReactions = {};
+let songPoll = null;
 
 // ─── Song helpers ────────────────────────────────────────────────────────────
 
@@ -1054,6 +1130,36 @@ function getPlayCounts() {
 
 function savePlayCounts() {
   localStorage.setItem(storageKey(KEY_PLAYS), JSON.stringify(playCounts));
+}
+
+function getSongReactions() {
+  try { return JSON.parse(localStorage.getItem(storageKey(KEY_REACTIONS)) || '{}'); }
+  catch { return {}; }
+}
+
+function saveSongReactions() {
+  localStorage.setItem(storageKey(KEY_REACTIONS), JSON.stringify(songReactions));
+  syncWrite(childDoc().set({ reactions: songReactions }, { merge: true }), 'Reactions synced');
+}
+
+function defaultPoll() {
+  const candidateIds = getStaticSongs().slice(0, 4).map(s => s.id);
+  return {
+    prompt: 'Song of the week',
+    candidateIds,
+    votes: {},
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function getSongPoll() {
+  try { return JSON.parse(localStorage.getItem(storageKey(KEY_POLL)) || 'null') || defaultPoll(); }
+  catch { return defaultPoll(); }
+}
+
+function saveSongPoll() {
+  localStorage.setItem(storageKey(KEY_POLL), JSON.stringify(songPoll));
+  syncWrite(childDoc().set({ poll: songPoll }, { merge: true }), 'Poll synced');
 }
 
 function syncWrite(promise, successMessage) {
@@ -1565,6 +1671,8 @@ function loadChildLocalState() {
   try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_CUSTOM)) || '[]'); } catch { CUSTOM_SONGS  = []; }
   try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_HIDDEN)) || '[]'); } catch { HIDDEN_SONGS  = []; }
   playCounts = getPlayCounts();
+  songReactions = getSongReactions();
+  songPoll = getSongPoll();
 }
 
 async function connectChild() {
@@ -1581,6 +1689,14 @@ async function connectChild() {
     if (d.hiddenSongs) {
       HIDDEN_SONGS = d.hiddenSongs;
       localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
+    }
+    if (d.reactions) {
+      songReactions = d.reactions;
+      localStorage.setItem(storageKey(KEY_REACTIONS), JSON.stringify(songReactions));
+    }
+    if (d.poll) {
+      songPoll = d.poll;
+      localStorage.setItem(storageKey(KEY_POLL), JSON.stringify(songPoll));
     }
   }
 
@@ -1602,6 +1718,16 @@ async function connectChild() {
       refreshFilteredSongs();
       renderCategories();
       needsRender = true;
+    }
+    if (d.reactions !== undefined) {
+      songReactions = d.reactions || {};
+      localStorage.setItem(storageKey(KEY_REACTIONS), JSON.stringify(songReactions));
+      needsRender = true;
+    }
+    if (d.poll !== undefined) {
+      songPoll = d.poll || defaultPoll();
+      localStorage.setItem(storageKey(KEY_POLL), JSON.stringify(songPoll));
+      renderPollPanel();
     }
     if (needsRender) {
       renderSongList();
@@ -1695,6 +1821,7 @@ function renderSongList() {
           <span class="song-item-artist">${escapeHtml(s.artist)}</span>
           ${s.note ? `<span class="song-item-note">${escapeHtml(s.note)}</span>` : ''}
         </div>
+        ${reactionHtml(s.id)}
       </div>
       ${noVidBadge}
       ${tagHtml}
@@ -1730,7 +1857,106 @@ function renderModes() {
   document.getElementById('btn-repeat').classList.toggle('active', isRepeat);
 }
 
-function render() { renderNowPlaying(); renderPlayBtn(); renderSongList(); }
+function render() { renderNowPlaying(); renderPlayBtn(); renderMilestonePanel(); renderPollPanel(); renderSongList(); }
+
+function reactionTotal(songId, kind) {
+  return ((songReactions[songId] || {})[kind] || 0);
+}
+
+function reactionHtml(songId) {
+  const reactions = [
+    ['dance', '💃'],
+    ['sing', '🎤'],
+    ['again', '🔁'],
+    ['calm', '😌']
+  ];
+  return `<div class="reaction-row">${reactions.map(([kind, icon]) =>
+    `<button class="reaction-btn" onclick="event.stopPropagation();reactToSong('${safeJsArg(songId)}','${kind}')" title="${kind}">${icon} ${reactionTotal(songId, kind)}</button>`
+  ).join('')}</div>`;
+}
+
+function reactToSong(songId, kind) {
+  songReactions[songId] = songReactions[songId] || {};
+  songReactions[songId][kind] = (songReactions[songId][kind] || 0) + 1;
+  saveSongReactions();
+  renderSongList();
+}
+
+function renderPollPanel() {
+  const el = document.getElementById('poll-panel');
+  if (!el) return;
+  songPoll = songPoll || defaultPoll();
+  const allSongs = getBaseSongs();
+  const candidates = (songPoll.candidateIds || []).map(id => allSongs.find(s => s.id === id)).filter(Boolean);
+  if (!candidates.length) { el.innerHTML = ''; return; }
+  const votes = songPoll.votes || {};
+  const total = Object.values(votes).reduce((sum, n) => sum + Number(n || 0), 0);
+  const votedFor = localStorage.getItem(storageKey('le_poll_voted'));
+  el.innerHTML = `<section class="poll-panel">
+    <div class="poll-head">
+      <div>
+        <div class="poll-title">🏆 ${escapeHtml(currentChild().name)}'s ${escapeHtml(songPoll.prompt || 'Song of the week')}</div>
+        <div class="poll-subtitle">Tap a song to vote. Everyone can join in from their own phone.</div>
+      </div>
+      <span class="cat-tag">${total} vote${total === 1 ? '' : 's'}</span>
+    </div>
+    <div class="poll-options">
+      ${candidates.map(song => {
+        const count = Number(votes[song.id] || 0);
+        const pct = total ? Math.round((count / total) * 100) : 0;
+        return `<button class="poll-option ${votedFor === song.id ? 'voted' : ''}" onclick="voteForSong('${safeJsArg(song.id)}')">
+          <div class="poll-song">${CAT_EMOJI[song.cat] || '🎵'} ${escapeHtml(song.title)}</div>
+          <div class="poll-votes">${count} vote${count === 1 ? '' : 's'} · ${pct}%</div>
+          <div class="poll-bar"><div class="poll-fill" style="width:${pct}%"></div></div>
+        </button>`;
+      }).join('')}
+    </div>
+  </section>`;
+}
+
+function voteForSong(songId) {
+  songPoll = songPoll || defaultPoll();
+  songPoll.votes = songPoll.votes || {};
+  songPoll.votes[songId] = (songPoll.votes[songId] || 0) + 1;
+  songPoll.updatedAt = new Date().toISOString();
+  localStorage.setItem(storageKey('le_poll_voted'), songId);
+  saveSongPoll();
+  renderPollPanel();
+}
+
+function milestoneAgeLabel(dateStr) {
+  const months = getAgeMonthsAt(dateStr);
+  if (months === null) return '';
+  if (months === 0) {
+    const days = Math.max(0, Math.round((new Date(dateStr) - new Date(getBirthDate())) / 86400000));
+    return days === 0 ? 'Birth day' : `${days} day${days === 1 ? '' : 's'} old`;
+  }
+  return ageLabel(months);
+}
+
+function renderMilestonePanel() {
+  const el = document.getElementById('milestone-panel');
+  if (!el) return;
+  if (activeChildId !== 'aadritha') { el.innerHTML = ''; return; }
+  const milestones = currentChild().milestones || [];
+  const content = milestones.length
+    ? `<div class="milestone-river">${milestones.map(m => `<article class="milestone-stone">
+        <div class="milestone-dot">${escapeHtml(m.icon || '✨')}</div>
+        <div class="milestone-age">${escapeHtml(milestoneAgeLabel(m.date))}</div>
+        <div class="milestone-date">${escapeHtml(formatDate(m.date))}</div>
+        <div class="milestone-copy">${escapeHtml(m.label || '')}</div>
+      </article>`).join('')}</div>`
+    : `<p class="milestone-empty">Aadritha's milestone path is ready for firsts, favorites, dances, words, trips, and family memories.</p>`;
+  el.innerHTML = `<section class="milestone-panel">
+    <div class="milestone-head">
+      <div>
+        <div class="milestone-title">🌱 Aadritha's milestone garden</div>
+        <div class="milestone-subtitle">A playful path of firsts and family memories.</div>
+      </div>
+    </div>
+    ${content}
+  </section>`;
+}
 
 // ─── Render: diary ────────────────────────────────────────────────────────────
 

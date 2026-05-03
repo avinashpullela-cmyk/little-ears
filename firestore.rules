@@ -6,7 +6,7 @@ service cloud.firestore {
       allow read: if familyId == 'little-ears-shared' && isValidChild(childId);
       allow write: if familyId == 'little-ears-shared'
         && isValidChild(childId)
-        && request.resource.data.keys().hasOnly(['diary', 'customSongs', 'hiddenSongs', 'birthDate'])
+        && request.resource.data.keys().hasOnly(['diary', 'customSongs', 'hiddenSongs', 'birthDate', 'reactions', 'poll'])
         && validDiary(request.resource.data.diary)
         && validCustomSongs(request.resource.data.customSongs)
         && validHiddenSongs(request.resource.data.hiddenSongs)
