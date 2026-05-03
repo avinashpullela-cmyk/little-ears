@@ -563,58 +563,104 @@
     .log-memory-btn:hover, .export-diary-btn:hover { opacity: .85; }
 
     .weekly-moment {
-      position: relative; overflow: hidden; background: #fffdf8;
-      border-radius: 16px; padding: 18px; box-shadow: 0 14px 34px rgba(61,64,91,.12);
-      margin-bottom: 18px; border: 2px solid #f2d4a8;
+      position: relative; overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 0% 0%, rgba(255,210,170,.55), transparent 60%),
+        radial-gradient(120% 80% at 100% 100%, rgba(255,180,210,.45), transparent 60%),
+        var(--surface);
+      border-radius: 18px; padding: 14px 14px 12px;
+      box-shadow: 0 6px 18px rgba(61,64,91,.08);
+      margin-bottom: 16px;
+      border: 1px solid rgba(224,122,95,.18);
     }
     .weekly-moment::before {
-      content: ""; position: absolute; inset: 0 0 auto 0; height: 6px;
-      background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+      content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), var(--accent), transparent);
+      opacity: .7;
     }
     .weekly-moment-head {
-      display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: center;
-      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
     }
     .weekly-moment-icon {
-      width: 46px; height: 46px; border-radius: 14px;
-      background: #f7e7c8; display: flex; align-items: center; justify-content: center;
-      font-size: 24px; box-shadow: inset 0 0 0 2px rgba(244,162,97,.16);
+      width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, #ffd66b, #ff9966);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; box-shadow: 0 2px 6px rgba(244,162,97,.35);
+      animation: starGlow 3s ease-in-out infinite;
     }
-    .weekly-moment-title { font-size: 17px; font-weight: 900; color: var(--text); }
-    .weekly-moment-subtitle { font-size: 12px; color: var(--text-lt); margin-top: 4px; line-height: 1.45; }
+    @keyframes starGlow {
+      0%, 100% { box-shadow: 0 2px 6px rgba(244,162,97,.35); }
+      50%      { box-shadow: 0 2px 14px rgba(244,162,97,.65); }
+    }
+    .weekly-moment-title {
+      font-size: 13px; font-weight: 800; color: var(--text);
+      letter-spacing: .1px; line-height: 1.25;
+    }
+    .weekly-moment-subtitle { display: none; } /* sleeker — placeholder carries the hint */
+
     .weekly-moment-form {
-      display: grid; grid-template-columns: minmax(132px, 170px) 1fr auto;
-      gap: 10px; align-items: stretch; background: rgba(255,255,255,.68);
-      border: 1px solid rgba(224,122,95,.16); border-radius: 14px; padding: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+      background: rgba(255,255,255,.55); backdrop-filter: blur(2px);
+      border: 1px solid rgba(224,122,95,.14); border-radius: 14px; padding: 10px;
+      transition: border-color .18s, box-shadow .18s, background .18s;
     }
-    .weekly-moment-date,
+    .weekly-moment-form:focus-within {
+      border-color: rgba(224,122,95,.45);
+      box-shadow: 0 0 0 4px rgba(224,122,95,.08);
+      background: #fff;
+    }
     .weekly-moment-input {
-      width: 100%; border: 2px solid transparent; border-radius: 12px;
-      background: #fff; color: var(--text); outline: none;
-      font-size: 14px; padding: 10px 12px;
+      width: 100%; border: none; background: transparent; outline: none;
+      color: var(--text); font-size: 14px; line-height: 1.45;
+      padding: 4px 4px 0; resize: none; min-height: 22px;
+      font-family: inherit;
+      transition: min-height .2s;
     }
-    .weekly-moment-input { min-height: 44px; resize: vertical; line-height: 1.4; }
-    .weekly-moment-date:focus,
-    .weekly-moment-input:focus { border-color: var(--secondary); background: #fff; }
+    .weekly-moment-form:focus-within .weekly-moment-input { min-height: 56px; }
+    .weekly-moment-input::placeholder { color: var(--text-lt); opacity: .8; }
+
+    .weekly-moment-toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding-top: 6px; border-top: 1px dashed rgba(224,122,95,.18);
+    }
+    .weekly-moment-date {
+      border: none; background: transparent; outline: none; cursor: pointer;
+      font-size: 12px; color: var(--text-lt); font-weight: 600;
+      padding: 4px 6px; border-radius: 8px;
+      font-family: inherit;
+    }
+    .weekly-moment-date:hover { background: rgba(224,122,95,.08); color: var(--primary); }
+    .weekly-moment-date:focus { background: rgba(224,122,95,.1); color: var(--primary); }
     .weekly-moment-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      background: var(--primary); color: #fff; border: none; border-radius: 12px;
-      padding: 0 16px; font-size: 13px; font-weight: 800; cursor: pointer;
-      min-height: 44px; white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff; border: none; border-radius: 999px;
+      padding: 7px 14px; font-size: 12px; font-weight: 800; cursor: pointer;
+      letter-spacing: .2px; white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(224,122,95,.28);
+      transition: transform .12s, box-shadow .18s, filter .18s;
     }
-    .weekly-moment-btn:hover { background: var(--secondary); }
-    .weekly-moment-err { font-size: 12px; color: #e63946; min-height: 16px; margin-top: 8px; }
+    .weekly-moment-btn::before { content: "✨"; font-size: 11px; }
+    .weekly-moment-btn:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 6px 14px rgba(224,122,95,.36); }
+    .weekly-moment-btn:active { transform: translateY(0); }
+
+    .weekly-moment-err { font-size: 11px; color: #e63946; min-height: 14px; margin-top: 6px; padding-left: 4px; }
+
     body.bedtime .weekly-moment {
-      background: var(--surface); border-color: #6f7eb5; box-shadow: none;
+      background:
+        radial-gradient(120% 80% at 0% 0%, rgba(124,103,189,.25), transparent 60%),
+        radial-gradient(120% 80% at 100% 100%, rgba(96,138,189,.22), transparent 60%),
+        var(--surface);
+      border-color: rgba(124,103,189,.35); box-shadow: none;
     }
-    body.bedtime .weekly-moment-icon { background: #303959; color: var(--primary-lt); }
     body.bedtime .weekly-moment-form {
-      background: rgba(24,28,47,.6); border-color: var(--border);
+      background: rgba(24,28,47,.55); border-color: rgba(124,103,189,.28);
     }
-    body.bedtime .weekly-moment-date,
-    body.bedtime .weekly-moment-input {
-      background: #181c2f; color: var(--text); border-color: var(--border);
+    body.bedtime .weekly-moment-form:focus-within {
+      background: rgba(24,28,47,.85); border-color: rgba(124,103,189,.55);
+      box-shadow: 0 0 0 4px rgba(124,103,189,.12);
     }
+    body.bedtime .weekly-moment-toolbar { border-top-color: rgba(124,103,189,.22); }
 
     /* ── Retro badge on diary entries ── */
     .retro-badge {
@@ -965,16 +1011,15 @@
 
   <div class="weekly-moment" id="weekly-moment-panel">
     <div class="weekly-moment-head">
-      <div class="weekly-moment-icon">⭐</div>
-      <div>
-        <div class="weekly-moment-title" id="weekly-moment-title">Best moment of the week with Aadritha</div>
-        <div class="weekly-moment-subtitle">Add a tiny highlight from this week. It will appear in the Music Diary with the date.</div>
-      </div>
+      <div class="weekly-moment-icon">★</div>
+      <div class="weekly-moment-title" id="weekly-moment-title">This week with Aadritha</div>
     </div>
     <div class="weekly-moment-form">
-      <input id="weekly-moment-date" class="weekly-moment-date" type="date" aria-label="Best moment date">
-      <textarea id="weekly-moment-text" class="weekly-moment-input" placeholder="e.g. She giggled when everyone clapped after dinner." aria-label="Best moment of the week"></textarea>
-      <button class="weekly-moment-btn" onclick="submitWeeklyMoment()">Save moment</button>
+      <textarea id="weekly-moment-text" class="weekly-moment-input" rows="1" placeholder="A tiny moment to remember…" aria-label="Best moment of the week"></textarea>
+      <div class="weekly-moment-toolbar">
+        <input id="weekly-moment-date" class="weekly-moment-date" type="date" aria-label="Best moment date">
+        <button class="weekly-moment-btn" onclick="submitWeeklyMoment()">Save</button>
+      </div>
     </div>
     <div class="weekly-moment-err" id="weekly-moment-err"></div>
   </div>
@@ -1599,7 +1644,7 @@ function renderWeeklyMomentPanel() {
   const dateEl = document.getElementById('weekly-moment-date');
   const errEl = document.getElementById('weekly-moment-err');
   if (!title || !dateEl) return;
-  title.textContent = `Best moment of the week with ${currentChild().name}`;
+  title.textContent = `This week with ${currentChild().name}`;
   dateEl.min = getBirthDate();
   dateEl.max = todayIso();
   if (!dateEl.value || dateEl.value < dateEl.min || dateEl.value > dateEl.max) {
