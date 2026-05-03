@@ -1685,7 +1685,10 @@ function ageLabel(m) {
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  // Parse YYYY-MM-DD as a local date so timezones west of UTC don't show the previous day.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(iso);
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
 }
 
 // ─── Diary ────────────────────────────────────────────────────────────────────
