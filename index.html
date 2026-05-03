@@ -1267,6 +1267,7 @@ let memorySelectedSong = null;
 
 let player      = null;
 let playerReady = false;
+let currentVideoId = null;
 let currentIdx  = 0;
 let isPlaying   = false;
 let isShuffle   = false;
@@ -2616,7 +2617,11 @@ function toggleBedtimeMode() {
 
 function loadAndPlay(vid) {
   if (!playerReady) return;
+  currentVideoId = vid;
   player.loadVideoById(vid);
+  // Some browsers/devices cue first and do not reliably autoplay on initial load.
+  // Explicitly play after load to make the main Play button behavior consistent.
+  try { player.playVideo(); } catch {}
   isPlaying = true;
   render();
 }
@@ -2627,6 +2632,11 @@ function togglePlay() {
   if (!vid) return; // no video for this song
   if (!playerReady) return;
   const s = player.getPlayerState();
+  if (currentVideoId !== vid || s === YT.PlayerState.UNSTARTED) {
+    // Align with row-click behavior on first play or when song changed.
+    loadAndPlay(vid);
+    return;
+  }
   // Treat BUFFERING (3) same as PLAYING — user clicked pause before the video fully started
   if (s === YT.PlayerState.PLAYING || s === YT.PlayerState.BUFFERING) {
     player.pauseVideo();
