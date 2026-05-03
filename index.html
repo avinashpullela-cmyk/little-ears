@@ -1254,6 +1254,7 @@ const KEY_BEDTIME = 'le_bedtime';
 const KEY_PLAYS = 'le_play_counts';
 const KEY_REACTIONS = 'le_song_reactions';
 const KEY_POLL = 'le_song_poll';
+const KEY_WEEKLY_MODEL = 'le_weekly_model';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
@@ -1281,6 +1282,7 @@ let pendingConfirm = null;
 let playCounts = {};
 let songReactions = {};
 let songPoll = null;
+let weeklyModel = null;
 
 // ─── Song helpers ────────────────────────────────────────────────────────────
 
@@ -1302,6 +1304,90 @@ function getStaticSongs() {
 
 function getBaseSongs() {
   return [...getStaticSongs(), ...CUSTOM_SONGS];
+}
+
+function weekStartIso(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sun, 1 = Mon
+  const offsetFromMonday = day === 0 ? 6 : day - 1;
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - offsetFromMonday);
+  return d.toISOString().split('T')[0];
+}
+
+function defaultWeeklyModel() {
+  return {
+    weekStart: weekStartIso(),
+    songStats: {},
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function getWeeklyModel() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey(KEY_WEEKLY_MODEL)) || 'null') || defaultWeeklyModel();
+  } catch {
+    return defaultWeeklyModel();
+  }
+}
+
+function saveWeeklyModel() {
+  localStorage.setItem(storageKey(KEY_WEEKLY_MODEL), JSON.stringify(weeklyModel));
+  syncWrite(childDoc().set({ weeklyModel }, { merge: true }));
+}
+
+function ensureWeeklyModelCurrent(forceReset = false) {
+  const currentWeek = weekStartIso();
+  if (!weeklyModel || forceReset || weeklyModel.weekStart !== currentWeek) {
+    weeklyModel = defaultWeeklyModel();
+    weeklyModel.weekStart = currentWeek;
+    weeklyModel.generatedAt = new Date().toISOString();
+    saveWeeklyModel();
+  }
+}
+
+function addUsageScore(songId, field, amount = 1) {
+  if (!songId || !field) return;
+  ensureWeeklyModelCurrent();
+  const stats = weeklyModel.songStats || {};
+  stats[songId] = stats[songId] || {};
+  stats[songId][field] = (stats[songId][field] || 0) + amount;
+  stats[songId].lastTouchedAt = new Date().toISOString();
+  weeklyModel.songStats = stats;
+  weeklyModel.generatedAt = new Date().toISOString();
+  saveWeeklyModel();
+}
+
+function recommendationScore(song) {
+  const id = song.id;
+  const stats = (weeklyModel && weeklyModel.songStats && weeklyModel.songStats[id]) || {};
+  const plays = Number(playCounts[id] || 0);
+  const react = songReactions[id] || {};
+  const reactionBoost = Number(react.dance || 0) + Number(react.sing || 0) + Number(react.again || 0) + Number(react.calm || 0);
+  const pollBoost = Number((songPoll && songPoll.votes && songPoll.votes[id]) || 0);
+  const weekBoost = Number(stats.play || 0) * 3 + Number(stats.reaction || 0) * 2 + Number(stats.vote || 0) * 2 + Number(stats.diary || 0) * 4;
+  const diaryBoost = getDiary().some(e => e.songId === id) ? 1.5 : 0;
+  const hasVideoBoost = getVideoId(song) ? 0.5 : 0;
+  return (plays * 2) + reactionBoost + (pollBoost * 2) + weekBoost + diaryBoost + hasVideoBoost;
+}
+
+function getWeeklyRankedSongs() {
+  const base = getBaseSongs();
+  const ranked = [...base].sort((a, b) => recommendationScore(b) - recommendationScore(a));
+  const weekSeed = weekStartIso();
+  const stableHash = (value) => {
+    let h = 0;
+    const text = `${weekSeed}:${value}`;
+    for (let i = 0; i < text.length; i++) h = ((h << 5) - h) + text.charCodeAt(i);
+    return Math.abs(h);
+  };
+  const exploratory = ranked
+    .filter(song => recommendationScore(song) <= 1)
+    .sort((a, b) => stableHash(a.id) - stableHash(b.id))
+    .slice(0, 3);
+  const exploratoryIds = new Set(exploratory.map(s => s.id));
+  const primary = ranked.filter(s => !exploratoryIds.has(s.id));
+  return [...exploratory, ...primary];
 }
 
 function escapeHtml(value) {
@@ -1372,9 +1458,10 @@ function saveSongReactions() {
 }
 
 function defaultPoll() {
-  const candidateIds = getStaticSongs().slice(0, 4).map(s => s.id);
+  const candidateIds = getWeeklyRankedSongs().slice(0, 4).map(s => s.id);
   return {
     prompt: 'Song of the week',
+    weekStart: weekStartIso(),
     candidateIds,
     votes: {},
     updatedAt: new Date().toISOString()
@@ -1382,8 +1469,14 @@ function defaultPoll() {
 }
 
 function getSongPoll() {
-  try { return JSON.parse(localStorage.getItem(storageKey(KEY_POLL)) || 'null') || defaultPoll(); }
-  catch { return defaultPoll(); }
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey(KEY_POLL)) || 'null');
+    if (!stored) return defaultPoll();
+    if (stored.weekStart !== weekStartIso()) return defaultPoll();
+    return stored;
+  } catch {
+    return defaultPoll();
+  }
 }
 
 function saveSongPoll() {
@@ -1412,7 +1505,8 @@ function getVideoId(song) {
 }
 
 function refreshFilteredSongs() {
-  const base = getBaseSongs().filter(s => !HIDDEN_SONGS.includes(s.id));
+  ensureWeeklyModelCurrent();
+  const base = getWeeklyRankedSongs().filter(s => !HIDDEN_SONGS.includes(s.id));
   let filtered = currentCat === 'all' ? base : base.filter(s => s.cat === currentCat);
   filtered = applyQuickFilter(filtered);
   if (searchQuery) {
@@ -1690,6 +1784,7 @@ function submitLogMemory() {
   });
 
   saveDiary(entries);
+  if (song) addUsageScore(song.id, 'diary', 1);
   closeMemoryModal();
   setView('diary');
   renderDiaryView();
@@ -2027,6 +2122,8 @@ function loadChildLocalState() {
   try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_HIDDEN)) || '[]'); } catch { HIDDEN_SONGS  = []; }
   playCounts = getPlayCounts();
   songReactions = getSongReactions();
+  weeklyModel = getWeeklyModel();
+  ensureWeeklyModelCurrent();
   songPoll = getSongPoll();
 }
 
@@ -2052,6 +2149,11 @@ async function connectChild() {
     if (d.poll) {
       songPoll = d.poll;
       localStorage.setItem(storageKey(KEY_POLL), JSON.stringify(songPoll));
+    }
+    if (d.weeklyModel) {
+      weeklyModel = d.weeklyModel;
+      localStorage.setItem(storageKey(KEY_WEEKLY_MODEL), JSON.stringify(weeklyModel));
+      ensureWeeklyModelCurrent();
     }
   }
 
@@ -2083,6 +2185,13 @@ async function connectChild() {
       songPoll = d.poll || defaultPoll();
       localStorage.setItem(storageKey(KEY_POLL), JSON.stringify(songPoll));
       renderPollPanel();
+    }
+    if (d.weeklyModel !== undefined) {
+      weeklyModel = d.weeklyModel || defaultWeeklyModel();
+      localStorage.setItem(storageKey(KEY_WEEKLY_MODEL), JSON.stringify(weeklyModel));
+      ensureWeeklyModelCurrent();
+      refreshFilteredSongs();
+      needsRender = true;
     }
     if (needsRender) {
       renderSongList();
@@ -2248,6 +2357,7 @@ function reactionHtml(songId) {
 function reactToSong(songId, kind) {
   songReactions[songId] = songReactions[songId] || {};
   songReactions[songId][kind] = (songReactions[songId][kind] || 0) + 1;
+  addUsageScore(songId, 'reaction', 1);
   saveSongReactions();
   renderSongList();
 }
@@ -2289,6 +2399,7 @@ function voteForSong(songId) {
   songPoll.votes = songPoll.votes || {};
   songPoll.votes[songId] = (songPoll.votes[songId] || 0) + 1;
   songPoll.updatedAt = new Date().toISOString();
+  addUsageScore(songId, 'vote', 1);
   localStorage.setItem(storageKey('le_poll_voted'), songId);
   saveSongPoll();
   renderPollPanel();
@@ -2465,6 +2576,7 @@ function selectSong(idx) {
     if (nvMsg) nvMsg.style.display = 'none';
     loadAndPlay(vid);
     playCounts[songs[idx].id] = (playCounts[songs[idx].id] || 0) + 1;
+    addUsageScore(songs[idx].id, 'play', 1);
     savePlayCounts();
   } else {
     isPlaying = false;
