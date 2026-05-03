@@ -174,6 +174,77 @@
     .child-subtitle { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-lt); }
     body.bedtime .child-btn.active { background: #303959; }
 
+    /* ── Child hero avatar ── */
+    .child-hero {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 14px auto 6px;
+      animation: heroPop .55s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes heroPop {
+      0%   { transform: scale(.6); opacity: 0; }
+      100% { transform: scale(1);  opacity: 1; }
+    }
+    .child-hero-ring-wrap {
+      position: relative;
+      width: 132px; height: 132px;
+    }
+    .child-hero-ring {
+      position: relative;
+      width: 132px; height: 132px;
+      border-radius: 50%;
+      padding: 5px;
+      background: conic-gradient(from 0deg,
+        #ff7eb6, #ffb38a, #ffe066, #9be7a3, #7ed6ff, #c79bff, #ff7eb6);
+      animation: ringSpin 8s linear infinite;
+      box-shadow: 0 8px 22px rgba(0,0,0,.15);
+    }
+    @keyframes ringSpin { to { transform: rotate(360deg); } }
+    .child-hero-photo {
+      width: 100%; height: 100%; border-radius: 50%;
+      object-fit: cover; display: block;
+      background: var(--surface);
+      border: 3px solid var(--surface);
+      animation: ringSpin 8s linear infinite reverse; /* keeps photo upright */
+    }
+    .child-hero-emoji {
+      position: absolute; font-size: 22px;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,.18));
+      animation: floaty 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .child-hero-emoji.e1 { top: -4px;  left: -6px;  animation-delay: 0s;   }
+    .child-hero-emoji.e2 { top: 6px;   right: -10px; animation-delay: .6s; }
+    .child-hero-emoji.e3 { bottom: 8px; left: -12px; animation-delay: 1.2s;}
+    .child-hero-emoji.e4 { bottom: -2px; right: -4px; animation-delay: 1.8s;}
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) rotate(-6deg); }
+      50%      { transform: translateY(-5px) rotate(6deg); }
+    }
+    .child-hero-name {
+      margin-top: 10px;
+      font-size: 16px; font-weight: 800; color: var(--primary);
+      letter-spacing: .2px;
+    }
+    .child-hero-name .child-hero-age {
+      display: inline-block; margin-left: 6px;
+      font-size: 12px; font-weight: 600; color: var(--text-lt);
+    }
+    /* Per-child framing — keep faces in view after circular crop */
+    .child-hero[data-child="aadritha"] .child-hero-photo { object-position: 50% 30%; }
+    .child-hero[data-child="aanya"]    .child-hero-photo { object-position: 68% 45%; }
+    /* Per-child ring palettes */
+    .child-hero[data-child="aadritha"] .child-hero-ring {
+      background: conic-gradient(from 0deg,
+        #ffb6d5, #ffd6e7, #fff0c2, #ffc8a8, #f7a8c9, #ffb6d5);
+    }
+    .child-hero[data-child="aanya"] .child-hero-ring {
+      background: conic-gradient(from 0deg,
+        #9be7a3, #ffd66b, #ff8b8b, #7ed6ff, #c79bff, #9be7a3);
+    }
+    body.bedtime .child-hero-ring { box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+    body.bedtime .child-hero-name { color: #e9ecf3; }
+
     /* ── View tabs ── */
     .view-tabs {
       display: flex;
@@ -799,6 +870,22 @@
     <button class="child-btn" id="child-aanya" onclick="setChild('aanya')">Aanya<span class="child-subtitle">4.5 year old songs</span></button>
   </div>
 
+  <div class="child-hero" id="child-hero" data-child="aadritha">
+    <div class="child-hero-ring-wrap">
+      <div class="child-hero-ring">
+        <img class="child-hero-photo" id="child-hero-photo" alt="" />
+      </div>
+      <span class="child-hero-emoji e1" id="child-hero-e1">✨</span>
+      <span class="child-hero-emoji e2" id="child-hero-e2">👑</span>
+      <span class="child-hero-emoji e3" id="child-hero-e3">🎀</span>
+      <span class="child-hero-emoji e4" id="child-hero-e4">💖</span>
+    </div>
+    <div class="child-hero-name">
+      <span id="child-hero-name-text">Aadritha</span>
+      <span class="child-hero-age" id="child-hero-age"></span>
+    </div>
+  </div>
+
   <div class="view-tabs">
     <button class="view-tab active" id="tab-songs" onclick="setView('songs')">🎵  Songs</button>
     <button class="view-tab"        id="tab-diary" onclick="setView('diary')">📖  Music Diary</button>
@@ -941,6 +1028,8 @@ const CHILDREN = {
     subtitle: 'Toddler songs',
     birthDate: '2025-01-14',
     tagline: 'A world of music for Aadritha',
+    photo: 'photos/aadritha.jpg',
+    heroEmojis: ['✨','👑','🎀','💖'],
     milestones: [
       { icon:'🌟', label:'Birth', date:'2025-01-14' },
       { icon:'😊', label:'First smile I saw', date:'2025-01-23' },
@@ -987,6 +1076,8 @@ const CHILDREN = {
     subtitle: '4.5 year old songs',
     birthDate: '2021-09-30',
     tagline: 'Sing, dance, and learn with Aanya',
+    photo: 'photos/aanya.jpg',
+    heroEmojis: ['🍓','🌿','☀️','🌸'],
     milestones: [],
     songs: [
       { id:'L0MK7qz13bU', title:'Let It Go',                    artist:'Frozen',                 cat:'disney'   },
@@ -1815,6 +1906,21 @@ function updateHeaderChips() {
   document.querySelectorAll('.child-btn').forEach(btn => btn.classList.remove('active'));
   const activeBtn = document.getElementById(`child-${activeChildId}`);
   if (activeBtn) activeBtn.classList.add('active');
+  const hero = document.getElementById('child-hero');
+  if (hero) {
+    hero.setAttribute('data-child', activeChildId);
+    const photo = document.getElementById('child-hero-photo');
+    if (photo && child.photo) { photo.src = child.photo; photo.alt = child.name; }
+    const nameEl = document.getElementById('child-hero-name-text');
+    if (nameEl) nameEl.textContent = child.name;
+    const ageEl = document.getElementById('child-hero-age');
+    if (ageEl) ageEl.textContent = (m !== null) ? `· ${ageLabel(m)}` : '';
+    const emojis = child.heroEmojis || ['✨','🌟','💫','🎶'];
+    ['e1','e2','e3','e4'].forEach((id, i) => {
+      const el = document.getElementById(`child-hero-${id}`);
+      if (el) el.textContent = emojis[i] || '';
+    });
+  }
   if (m !== null) { age.textContent = `👧 ${child.name}: ${ageLabel(m)} old`; age.classList.remove('hidden'); }
   sync.innerHTML = '<span class="sync-dot synced"></span>Shared diary';
   sync.classList.remove('hidden');
