@@ -1,4 +1,4 @@
-const CACHE = 'little-ears-v4';
+const CACHE = 'little-ears-v5';
 const SHELL = ['./index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 // Install — cache app shell

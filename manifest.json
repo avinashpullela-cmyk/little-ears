@@ -1,7 +1,7 @@
 {
   "name": "Little Ears",
   "short_name": "Little Ears",
-  "description": "A world of music for Aadritha",
+  "description": "A family music diary for Aadritha and Aanya",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

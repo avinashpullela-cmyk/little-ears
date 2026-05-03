@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Little Ears – World Music for Aadritha</title>
+  <title>Little Ears – Family Music Diary</title>
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json">
@@ -150,15 +150,29 @@
       display: flex; justify-content: center; align-items: center;
       gap: 10px; margin-top: 10px; flex-wrap: wrap;
     }
-    .age-chip, .family-chip {
+    .age-chip, .sync-chip {
       display: inline-flex; align-items: center; gap: 5px;
       background: rgba(255,255,255,.22); border-radius: 16px;
       padding: 5px 13px; font-size: 12px; font-weight: 600; color: #fff;
     }
-    .age-chip.hidden, .family-chip.hidden { display: none; }
+    .age-chip.hidden, .sync-chip.hidden { display: none; }
 
     /* ── Layout ── */
     .main { max-width: 620px; margin: 0 auto; padding: 0 16px; }
+
+
+    .child-switcher {
+      display: flex; gap: 8px; margin: 18px 0 10px;
+      background: var(--border); border-radius: 16px; padding: 4px;
+    }
+    .child-btn {
+      flex: 1; border: none; border-radius: 13px; padding: 11px 10px;
+      background: transparent; color: var(--text-lt); cursor: pointer;
+      font-size: 14px; font-weight: 800; transition: all .18s;
+    }
+    .child-btn.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
+    .child-subtitle { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-lt); }
+    body.bedtime .child-btn.active { background: #303959; }
 
     /* ── View tabs ── */
     .view-tabs {
@@ -544,32 +558,11 @@
   Install: tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>
 </div>
 
-<!-- ── Modal: Family Code ─────────────────────────────────────── -->
-<div id="modal-code" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="modal-icon">👨‍👩‍👧</div>
-    <h2>Join your family's diary</h2>
-    <p>Enter the shared family code to sync Aadritha's music diary across everyone's devices.<br><br>
-       First time? Make up any code and share it — like <em>aadritha2024</em>.</p>
-    <input id="code-input" class="modal-input" type="text"
-           placeholder="e.g. aadritha2024"
-           autocapitalize="none" autocorrect="off" spellcheck="false"
-           style="text-align:center;margin-bottom:10px"
-           onkeydown="if(event.key==='Enter') submitCode()">
-    <div class="modal-err" id="code-err"></div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="generateFamilyCode()">Generate code</button>
-      <button id="code-btn" class="modal-btn" onclick="submitCode()">Join family</button>
-    </div>
-    <p class="modal-hint" id="code-share-hint"></p>
-  </div>
-</div>
-
 <!-- ── Modal: Birth Date ──────────────────────────────────────── -->
 <div id="modal-birth" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-icon">🎵</div>
-    <h2>When was Aadritha born?</h2>
+    <h2>When was this child born?</h2>
     <p>We'll use this to track what she loved at each age — automatically.</p>
     <input id="birth-input" class="modal-input" type="date"
            style="text-align:center;margin-bottom:10px"
@@ -585,7 +578,7 @@
     <div style="text-align:center;margin-bottom:20px">
       <div class="modal-icon">🎶</div>
       <h2>Add a song</h2>
-      <p>Add any song Aadritha loves — with or without a YouTube link.</p>
+      <p>Add any song this child loves — with or without a YouTube link.</p>
     </div>
 
     <div class="form-group">
@@ -607,6 +600,10 @@
         <option value="japanese">🌸  Japanese</option>
         <option value="spanish">🌺  Spanish / Latin</option>
         <option value="celtic">☘️  Celtic / Irish</option>
+        <option value="disney">🏰  Disney & Movie</option>
+        <option value="learning">🔤  Learning</option>
+        <option value="dance">⚡  Dance & Action</option>
+        <option value="bedtime">🌙  Bedtime</option>
       </select>
     </div>
 
@@ -660,6 +657,10 @@
         <option value="japanese">🌸  Japanese</option>
         <option value="spanish">🌺  Spanish / Latin</option>
         <option value="celtic">☘️  Celtic / Irish</option>
+        <option value="disney">🏰  Disney & Movie</option>
+        <option value="learning">🔤  Learning</option>
+        <option value="dance">⚡  Dance & Action</option>
+        <option value="bedtime">🌙  Bedtime</option>
       </select>
     </div>
     <div class="form-group">
@@ -736,14 +737,19 @@
 <!-- ── Header ──────────────────────────────────────────────────── -->
 <header>
   <h1>Little Ears</h1>
-  <p class="tagline">A world of music for Aadritha</p>
+  <p class="tagline">A family music diary</p>
   <div class="header-meta">
     <div id="age-chip"    class="age-chip hidden"></div>
-    <div id="family-chip" class="family-chip hidden"></div>
+    <div id="sync-chip" class="sync-chip hidden"></div>
   </div>
 </header>
 
 <div class="main">
+
+  <div class="child-switcher" id="child-switcher">
+    <button class="child-btn active" id="child-aadritha" onclick="setChild('aadritha')">Aadritha<span class="child-subtitle">Toddler songs</span></button>
+    <button class="child-btn" id="child-aanya" onclick="setChild('aanya')">Aanya<span class="child-subtitle">4.5 year old songs</span></button>
+  </div>
 
   <div class="view-tabs">
     <button class="view-tab active" id="tab-songs" onclick="setView('songs')">🎵  Songs</button>
@@ -864,40 +870,81 @@ const db = firebase.firestore();
 const CATEGORIES = [
   { id:'all',      label:'🌍  All'              },
   { id:'english',  label:'🎀  Nursery Rhymes'   },
-  { id:'indian',   label:'🪔  Indian Classical'  },
-  { id:'african',  label:'🌿  African'           },
-  { id:'japanese', label:'🌸  Japanese'          },
-  { id:'spanish',  label:'🌺  Spanish / Latin'   },
-  { id:'celtic',   label:'☘️  Celtic / Irish'    },
+  { id:'indian',   label:'🪔  Indian Classical' },
+  { id:'african',  label:'🌿  African'          },
+  { id:'japanese', label:'🌸  Japanese'         },
+  { id:'spanish',  label:'🌺  Spanish / Latin'  },
+  { id:'celtic',   label:'☘️  Celtic / Irish'   },
+  { id:'disney',   label:'🏰  Disney & Movie'   },
+  { id:'learning', label:'🔤  Learning'         },
+  { id:'dance',    label:'⚡  Dance & Action'   },
+  { id:'bedtime',  label:'🌙  Bedtime'          },
 ];
-const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️' };
-const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish' };
+const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️', disney:'🏰', learning:'🔤', dance:'⚡', bedtime:'🌙' };
+const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish', disney:'Disney/Movie', learning:'Learning', dance:'Dance/Action', bedtime:'Bedtime' };
 
-const STATIC_SONGS = [
-  { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
-  { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english'  },
-  { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english'  },
-  { id:'-hqiivkU0fI', title:'Five Little Monkeys',          artist:'Super Simple Songs',    cat:'english'  },
-  { id:'dHBT3NdO0mw', title:'Five Little Ducks',            artist:'Super Simple Songs',    cat:'english'  },
-  { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',  artist:'Super Simple Songs',    cat:'english'  },
-  { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',     artist:'Super Simple Songs',    cat:'english'  },
-  { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',         artist:'M.S. Subbulakshmi',    cat:'indian'   },
-  { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',         artist:'M.S. Subbulakshmi',    cat:'indian'   },
-  { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',    artist:'M.S. Subbulakshmi',    cat:'indian'   },
-  { id:'k03znbGf2vo', title:'Thula Sana',                   artist:'Zulu Lullaby',          cat:'african'  },
-  { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',        artist:'African Lullabies',     cat:'african'  },
-  { id:'10dXj51a_kg', title:'African Lullaby',              artist:'Jazz Lullabies',        cat:'african'  },
-  { id:'Y3cPq5vmXng', title:'Donguri Korokoro',             artist:'どんぐりころころ',      cat:'japanese' },
-  { id:'3aYemty3pIc', title:'Japanese Songs Medley',        artist:'Traditional',           cat:'japanese' },
-  { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',           artist:'Canticos (bilingual)',  cat:'spanish'  },
-  { id:'PyUkEF1dHW4', title:'Los Pollitos',                 artist:'Traditional Spanish',   cat:'spanish'  },
-  { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',        artist:'Irish Lullaby',         cat:'celtic'   },
-  { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'   },
-];
+const CHILDREN = {
+  aadritha: {
+    name: 'Aadritha',
+    subtitle: 'Toddler songs',
+    birthDate: '2025-01-14',
+    tagline: 'A world of music for Aadritha',
+    songs: [
+      { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
+      { id:'XqZsoesa55w', title:'Baby Shark',                   artist:'Pinkfong',              cat:'english'  },
+      { id:'yWirdnSDsV4', title:'Wheels on the Bus',            artist:'Super Simple Songs',    cat:'english'  },
+      { id:'-hqiivkU0fI', title:'Five Little Monkeys',          artist:'Super Simple Songs',    cat:'english'  },
+      { id:'dHBT3NdO0mw', title:'Five Little Ducks',            artist:'Super Simple Songs',    cat:'english'  },
+      { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',  artist:'Super Simple Songs',    cat:'english'  },
+      { id:'_6HzoUcx3eo', title:'Old MacDonald Had a Farm',     artist:'Super Simple Songs',    cat:'english'  },
+      { id:'guZR2_MS5ec', title:'Ganesha Pancharatnam',         artist:'M.S. Subbulakshmi',     cat:'indian'   },
+      { id:'ITB8RvvbUrA', title:'Bhavayami Raghuramam',         artist:'M.S. Subbulakshmi',     cat:'indian'   },
+      { id:'b8fb3BLMC1s', title:'Sri Venkatesa Suprabhatam',    artist:'M.S. Subbulakshmi',     cat:'indian'   },
+      { id:'k03znbGf2vo', title:'Thula Sana',                   artist:'Zulu Lullaby',          cat:'african'  },
+      { id:'CvS3JQ7qGcc', title:'Songs from the Baobab',        artist:'African Lullabies',     cat:'african'  },
+      { id:'10dXj51a_kg', title:'African Lullaby',              artist:'Jazz Lullabies',        cat:'african'  },
+      { id:'Y3cPq5vmXng', title:'Donguri Korokoro',             artist:'どんぐりころころ',      cat:'japanese' },
+      { id:'3aYemty3pIc', title:'Japanese Songs Medley',        artist:'Traditional',           cat:'japanese' },
+      { id:'X_0V4_Wu6vk', title:'Los Pollitos Dicen',           artist:'Canticos (bilingual)',  cat:'spanish'  },
+      { id:'PyUkEF1dHW4', title:'Los Pollitos',                 artist:'Traditional Spanish',   cat:'spanish'  },
+      { id:'TnnKgdRQl3E', title:'Too Ra Loo Ra Loo Ral',        artist:'Irish Lullaby',         cat:'celtic'   },
+      { id:'WHUCX5iy_zk', title:'Toora Loora Looral',           artist:'YOMIMON for Kids',      cat:'celtic'   },
+    ]
+  },
+  aanya: {
+    name: 'Aanya',
+    subtitle: '4.5 year old songs',
+    birthDate: '2021-10-01',
+    tagline: 'Sing, dance, and learn with Aanya',
+    songs: [
+      { id:'L0MK7qz13bU', title:'Let It Go',                    artist:'Frozen',                 cat:'disney'   },
+      { id:'YVVTZgwYwVo', title:"How Far I'll Go",              artist:'Moana',                  cat:'disney'   },
+      { id:'79DijItQXMM', title:"You're Welcome",               artist:'Moana',                  cat:'disney'   },
+      { id:'ru0K8uYEZWw', title:"Can't Stop the Feeling!",      artist:'Trolls',                 cat:'dance'    },
+      { id:'gVfgTw_W_JY', title:'The Goldfish',                  artist:'The Laurie Berkner Band',cat:'dance'    },
+      { id:'ymigWt5TOV8', title:'We Are The Dinosaurs',          artist:'The Laurie Berkner Band',cat:'dance'    },
+      { id:'388Q44ReOWE', title:'Shake Your Sillies Out',        artist:'Raffi',                   cat:'dance'    },
+      { id:'hft6uJQIF4g', title:'Down by the Bay',               artist:'Raffi',                   cat:'english'  },
+      { id:'3tx0rvuXIRg', title:'Bananaphone',                   artist:'Raffi',                   cat:'english'  },
+      { id:'71hqRT9U0wg', title:'Apples and Bananas',            artist:'Super Simple Songs',      cat:'learning' },
+      { id:'BELlZKpi1Zs', title:'The Alphabet Song',             artist:'Super Simple Songs',      cat:'learning' },
+      { id:'rD6FRDd9Hew', title:'Open Shut Them',                artist:'Super Simple Songs',      cat:'dance'    },
+      { id:'fN1Cyr0ZK9M', title:'The Pinocchio',                 artist:'Super Simple Songs',      cat:'dance'    },
+      { id:'frN3nvhIHUk', title:'Skidamarink',                   artist:'Super Simple Songs',      cat:'bedtime'  },
+      { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',   artist:'Super Simple Songs',      cat:'bedtime'  },
+      { id:'RuqvGiZi0qg', title:'Here Comes the Sun',            artist:'The Beatles',             cat:'bedtime'  },
+      { id:'1gUbdNbu6ak', title:'Try Everything',                artist:'Shakira / Zootopia',      cat:'disney'   },
+      { id:'k85mRPqvMbE', title:'Hakuna Matata',                 artist:'The Lion King',           cat:'disney'   },
+      { id:'Pjw2A3QU8Qg', title:'Bare Necessities',              artist:'The Jungle Book',         cat:'disney'   },
+      { id:'2Vv-BfVoq4g', title:'Perfect',                       artist:'Ed Sheeran',              cat:'bedtime'  },
+    ]
+  }
+};
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
 
-const KEY_CODE   = 'le_family_code';
+const KEY_CHILD = 'le_active_child';
+const FAMILY_DOC_ID = 'little-ears-shared';
 const KEY_BIRTH  = 'le_birthdate';
 const KEY_DIARY  = 'le_diary';
 const KEY_CUSTOM = 'le_custom_songs';
@@ -907,7 +954,7 @@ const KEY_PLAYS = 'le_play_counts';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
-let familyCode     = null;
+let activeChildId = localStorage.getItem(KEY_CHILD) || 'aadritha';
 let unsubFirestore = null;
 let CUSTOM_SONGS   = [];
 let HIDDEN_SONGS   = [];    // IDs of static songs removed from the list
@@ -932,8 +979,24 @@ let playCounts = {};
 
 // ─── Song helpers ────────────────────────────────────────────────────────────
 
+function currentChild() {
+  return CHILDREN[activeChildId] || CHILDREN.aadritha;
+}
+
+function storageKey(base) {
+  return `${base}_${activeChildId}`;
+}
+
+function childDoc() {
+  return db.collection('families').doc(FAMILY_DOC_ID).collection('children').doc(activeChildId);
+}
+
+function getStaticSongs() {
+  return currentChild().songs;
+}
+
 function getBaseSongs() {
-  return [...STATIC_SONGS, ...CUSTOM_SONGS];
+  return [...getStaticSongs(), ...CUSTOM_SONGS];
 }
 
 function escapeHtml(value) {
@@ -985,16 +1048,15 @@ document.getElementById('confirm-cancel').onclick = () => closeConfirm(false);
 document.getElementById('confirm-ok').onclick = () => closeConfirm(true);
 
 function getPlayCounts() {
-  try { return JSON.parse(localStorage.getItem(KEY_PLAYS) || '{}'); }
+  try { return JSON.parse(localStorage.getItem(storageKey(KEY_PLAYS)) || '{}'); }
   catch { return {}; }
 }
 
 function savePlayCounts() {
-  localStorage.setItem(KEY_PLAYS, JSON.stringify(playCounts));
+  localStorage.setItem(storageKey(KEY_PLAYS), JSON.stringify(playCounts));
 }
 
 function syncWrite(promise, successMessage) {
-  if (!familyCode) return Promise.resolve(true);
   setSyncing(true);
   return promise
     .then(() => {
@@ -1011,7 +1073,7 @@ function syncWrite(promise, successMessage) {
 
 /** Returns the YouTube video ID for a song (static or custom). */
 function getVideoId(song) {
-  return song.isCustom ? (song.videoId || null) : song.id;
+  return song.isCustom ? (song.videoId || null) : (song.videoId || song.id);
 }
 
 function refreshFilteredSongs() {
@@ -1045,11 +1107,19 @@ function applyQuickFilter(list) {
       .map(e => e.songId));
     return list.filter(s => recentIds.has(s.id));
   }
-  const presets = {
-    sleepy: ['9PhtxqKLvVc','yCjJyiqpAuU','b8fb3BLMC1s','k03znbGf2vo','TnnKgdRQl3E','WHUCX5iy_zk'],
-    dance: ['XqZsoesa55w','yWirdnSDsV4','-hqiivkU0fI','dHBT3NdO0mw','X_0V4_Wu6vk'],
-    grandparents: ['guZR2_MS5ec','ITB8RvvbUrA','b8fb3BLMC1s','PyUkEF1dHW4']
+  const presetsByChild = {
+    aadritha: {
+      sleepy: ['9PhtxqKLvVc','yCjJyiqpAuU','b8fb3BLMC1s','k03znbGf2vo','TnnKgdRQl3E','WHUCX5iy_zk'],
+      dance: ['XqZsoesa55w','yWirdnSDsV4','-hqiivkU0fI','dHBT3NdO0mw','X_0V4_Wu6vk'],
+      grandparents: ['guZR2_MS5ec','ITB8RvvbUrA','b8fb3BLMC1s','PyUkEF1dHW4']
+    },
+    aanya: {
+      sleepy: ['frN3nvhIHUk','yCjJyiqpAuU','RuqvGiZi0qg','2Vv-BfVoq4g'],
+      dance: ['ru0K8uYEZWw','gVfgTw_W_JY','ymigWt5TOV8','388Q44ReOWE','fN1Cyr0ZK9M'],
+      grandparents: ['hft6uJQIF4g','3tx0rvuXIRg','Pjw2A3QU8Qg','k85mRPqvMbE']
+    }
   };
+  const presets = presetsByChild[activeChildId] || presetsByChild.aadritha;
   const ids = new Set(presets[quickFilter] || []);
   return list.filter(s => ids.has(s.id) || (s.note || '').toLowerCase().includes(quickFilter));
 }
@@ -1116,11 +1186,8 @@ async function hideSong(songId) {
   });
   if (!ok) return;
   HIDDEN_SONGS = [...HIDDEN_SONGS, songId];
-  localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
-  if (familyCode) {
-    await syncWrite(db.collection('families').doc(familyCode)
-      .set({ hiddenSongs: HIDDEN_SONGS }, { merge: true }), 'Hidden songs synced');
-  }
+  localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
+  await syncWrite(childDoc().set({ hiddenSongs: HIDDEN_SONGS }, { merge: true }), 'Hidden songs synced');
   if (currentIdx >= songs.length - 1) currentIdx = Math.max(0, currentIdx - 1);
   refreshFilteredSongs();
   renderCategories();
@@ -1129,11 +1196,8 @@ async function hideSong(songId) {
 
 async function restoreAllSongs() {
   HIDDEN_SONGS = [];
-  localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
-  if (familyCode) {
-    await syncWrite(db.collection('families').doc(familyCode)
-      .set({ hiddenSongs: [] }, { merge: true }), 'Songs restored');
-  }
+  localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
+  await syncWrite(childDoc().set({ hiddenSongs: [] }, { merge: true }), 'Songs restored');
   refreshFilteredSongs();
   renderCategories();
   render();
@@ -1312,7 +1376,7 @@ async function submitAddSong() {
   };
 
   CUSTOM_SONGS = [...CUSTOM_SONGS, newSong];
-  localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+  localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
   await saveCustomSongsToFirestore('Song synced');
 
   refreshFilteredSongs();
@@ -1332,7 +1396,7 @@ async function deleteCustomSong(songId) {
   });
   if (!ok) return;
   CUSTOM_SONGS = CUSTOM_SONGS.filter(s => s.id !== songId);
-  localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+  localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
   await saveCustomSongsToFirestore('Song removal synced');
   refreshFilteredSongs();
   if (currentIdx >= songs.length) currentIdx = Math.max(0, songs.length - 1);
@@ -1343,9 +1407,7 @@ async function deleteCustomSong(songId) {
 }
 
 async function saveCustomSongsToFirestore(successMessage) {
-  if (!familyCode) return;
-  return syncWrite(db.collection('families').doc(familyCode)
-    .set({ customSongs: CUSTOM_SONGS }, { merge: true }), successMessage);
+  return syncWrite(childDoc().set({ customSongs: CUSTOM_SONGS }, { merge: true }), successMessage);
 }
 
 function openEditModal(songId) {
@@ -1395,7 +1457,7 @@ async function submitEditSong() {
     note: note || null,
     updatedAt: new Date().toISOString()
   } : s);
-  localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+  localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
   await saveCustomSongsToFirestore('Song changes synced');
   refreshFilteredSongs();
   renderCategories();
@@ -1408,7 +1470,7 @@ async function submitEditSong() {
 
 // ─── Age helpers ──────────────────────────────────────────────────────────────
 
-function getBirthDate() { return '2025-01-14'; }  // Aadritha's birthday — fixed forever
+function getBirthDate() { return currentChild().birthDate; }
 
 function getAgeMonths() {
   const bd = getBirthDate();
@@ -1432,15 +1494,13 @@ function formatDate(iso) {
 // ─── Diary ────────────────────────────────────────────────────────────────────
 
 function getDiary() {
-  try { return JSON.parse(localStorage.getItem(KEY_DIARY) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(storageKey(KEY_DIARY)) || '[]'); }
   catch { return []; }
 }
 
 function saveDiary(entries) {
-  localStorage.setItem(KEY_DIARY, JSON.stringify(entries));
-  if (!familyCode) return;
-  syncWrite(db.collection('families').doc(familyCode)
-    .set({ diary: entries }, { merge: true }), 'Diary synced');
+  localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(entries));
+  syncWrite(childDoc().set({ diary: entries }, { merge: true }), 'Diary synced');
 }
 
 function isLikedAtCurrentAge(songId) {
@@ -1501,63 +1561,44 @@ function setSyncing(v, offline = false) {
 
 // ─── Firebase connection ──────────────────────────────────────────────────────
 
-async function submitCode() {
-  const raw = normalizeFamilyCode(document.getElementById('code-input').value);
-  if (raw.length < 3) { document.getElementById('code-err').textContent = 'Code must be at least 3 characters.'; return; }
-  const btn = document.getElementById('code-btn');
-  btn.textContent = 'Connecting…'; btn.disabled = true;
-  document.getElementById('code-err').textContent = '';
-  try {
-    await connectFamily(raw);
-  } catch {
-    document.getElementById('code-err').textContent = 'Could not connect. Check your internet and try again.';
-    btn.textContent = 'Join family'; btn.disabled = false;
-  }
+function loadChildLocalState() {
+  try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_CUSTOM)) || '[]'); } catch { CUSTOM_SONGS  = []; }
+  try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_HIDDEN)) || '[]'); } catch { HIDDEN_SONGS  = []; }
+  playCounts = getPlayCounts();
 }
 
-function generateFamilyCode() {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  const code = Array.from(bytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 14);
-  document.getElementById('code-input').value = `family-${code}`;
-  document.getElementById('code-share-hint').textContent = 'Share this generated code only with family devices.';
-}
+async function connectChild() {
+  if (unsubFirestore) unsubFirestore();
 
-async function connectFamily(code) {
-  familyCode = code;
-  localStorage.setItem(KEY_CODE, code);
-
-  const snap = await db.collection('families').doc(code).get();
+  const snap = await childDoc().get();
   if (snap.exists) {
     const d = snap.data();
-    if (d.diary)       localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary));
+    if (d.diary)       localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(d.diary));
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
-      localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+      localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
     }
     if (d.hiddenSongs) {
       HIDDEN_SONGS = d.hiddenSongs;
-      localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
+      localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
     }
   }
 
-  // Real-time listener
-  if (unsubFirestore) unsubFirestore();
-  unsubFirestore = db.collection('families').doc(code).onSnapshot(doc => {
+  unsubFirestore = childDoc().onSnapshot(doc => {
     if (!doc.exists) return;
     const d = doc.data();
     let needsRender = false;
-    if (d.diary) { localStorage.setItem(KEY_DIARY, JSON.stringify(d.diary)); needsRender = true; }
+    if (d.diary) { localStorage.setItem(storageKey(KEY_DIARY), JSON.stringify(d.diary)); needsRender = true; }
     if (d.customSongs) {
       CUSTOM_SONGS = d.customSongs;
-      localStorage.setItem(KEY_CUSTOM, JSON.stringify(CUSTOM_SONGS));
+      localStorage.setItem(storageKey(KEY_CUSTOM), JSON.stringify(CUSTOM_SONGS));
       refreshFilteredSongs();
       renderCategories();
       needsRender = true;
     }
     if (d.hiddenSongs !== undefined) {
       HIDDEN_SONGS = d.hiddenSongs || [];
-      localStorage.setItem(KEY_HIDDEN, JSON.stringify(HIDDEN_SONGS));
+      localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
       refreshFilteredSongs();
       renderCategories();
       needsRender = true;
@@ -1566,25 +1607,25 @@ async function connectFamily(code) {
       renderSongList();
       if (currentView === 'diary') renderDiaryView();
     }
-  }, () => {
-    const dot = document.getElementById('sync-dot');
-    if (dot) dot.className = 'sync-dot offline';
-  });
+  }, () => setSyncing(false, true));
+}
 
-  document.getElementById('modal-code').classList.add('hidden');
-  updateHeaderChips();
-  bootApp();  // birth date is hardcoded — always boot immediately
+function setChild(childId) {
+  if (!CHILDREN[childId] || childId === activeChildId) return;
+  activeChildId = childId;
+  localStorage.setItem(KEY_CHILD, childId);
+  currentCat = 'all';
+  currentIdx = 0;
+  searchQuery = '';
+  quickFilter = 'all';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
+  loadChildLocalState();
+  bootApp();
+  connectChild().catch(() => setSyncing(false, true));
 }
 
 async function saveBirthDate() {
-  const val = document.getElementById('birth-input').value;
-  if (!val) { document.getElementById('birth-err').textContent = 'Please pick a date.'; return; }
-  localStorage.setItem(KEY_BIRTH, val);
-  if (familyCode) {
-    setSyncing(true);
-    await db.collection('families').doc(familyCode).set({ birthDate: val }, { merge: true });
-    setSyncing(false);
-  }
   document.getElementById('modal-birth').classList.add('hidden');
   updateHeaderChips();
   bootApp();
@@ -1593,14 +1634,17 @@ async function saveBirthDate() {
 // ─── Header chips ──────────────────────────────────────────────────────────────
 
 function updateHeaderChips() {
-  const m   = getAgeMonths();
+  const child = currentChild();
+  const m = getAgeMonths();
   const age = document.getElementById('age-chip');
-  const fam = document.getElementById('family-chip');
-  if (m !== null) { age.textContent = `👶 ${ageLabel(m)} old`; age.classList.remove('hidden'); }
-  if (familyCode) {
-    fam.innerHTML = `<span class="sync-dot synced"></span>${escapeHtml(familyCode)}`;
-    fam.classList.remove('hidden');
-  }
+  const sync = document.getElementById('sync-chip');
+  document.querySelector('header .tagline').textContent = child.tagline;
+  document.querySelectorAll('.child-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`child-${activeChildId}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  if (m !== null) { age.textContent = `👧 ${child.name}: ${ageLabel(m)} old`; age.classList.remove('hidden'); }
+  sync.innerHTML = '<span class="sync-dot synced"></span>Shared diary';
+  sync.classList.remove('hidden');
 }
 
 // ─── Render: song list ────────────────────────────────────────────────────────
@@ -1621,7 +1665,7 @@ function renderSongList() {
   if (songs.length === 0) {
     document.getElementById('song-list').innerHTML =
       `<div class="search-empty"><span>🎵</span>No songs in this playlist yet<br>
-       <small>Try All songs or add something Aadritha loves</small></div>`;
+       <small>Try All songs or add something this child loves</small></div>`;
     return;
   }
   document.getElementById('song-list').innerHTML = songs.map((s, i) => {
@@ -1701,7 +1745,7 @@ function renderDiaryView() {
       </div>
       <div class="diary-empty"><div class="diary-empty-icon">📖</div>
       <h3>The diary is empty</h3>
-      <p>Tap 🤍 on any song to save it to Aadritha's diary.<br><br>
+      <p>Tap 🤍 on any song to save it to this child's diary.<br><br>
       Her age is recorded automatically — you can look back at every musical milestone.</p></div>`;
     return;
   }
@@ -1759,7 +1803,7 @@ function renderDiaryView() {
 function exportDiary() {
   const data = {
     exportedAt: new Date().toISOString(),
-    familyCode,
+    child: activeChildId,
     birthDate: getBirthDate(),
     diary: getDiary(),
     customSongs: CUSTOM_SONGS,
@@ -1949,6 +1993,7 @@ function showIOSHint() {
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 function bootApp() {
+  document.title = `Little Ears – ${currentChild().name}`;
   refreshFilteredSongs();
   updateHeaderChips();
   renderCategories();
@@ -1957,7 +2002,7 @@ function bootApp() {
 }
 
 (function init() {
-  // Birth date is fixed — hardcode it so no device ever asks
+  localStorage.removeItem('le_family_code');
   localStorage.setItem(KEY_BIRTH, getBirthDate());
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -1968,10 +2013,7 @@ function bootApp() {
   }
   showIOSHint();
 
-  // Load custom songs and hidden-song list from local cache
-  try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(KEY_CUSTOM) || '[]'); } catch { CUSTOM_SONGS  = []; }
-  try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(KEY_HIDDEN) || '[]'); } catch { HIDDEN_SONGS  = []; }
-  playCounts = getPlayCounts();
+  loadChildLocalState();
   if (localStorage.getItem(KEY_BEDTIME) === '1') {
     document.body.classList.add('bedtime');
     document.getElementById('bedtime-toggle').classList.add('active');
@@ -1981,25 +2023,8 @@ function bootApp() {
     document.getElementById('vid-toggle').textContent = 'Show video';
   }
 
-  // Support ?code=xxx in the URL — share one link, everyone joins automatically
-  const urlCode  = new URLSearchParams(location.search).get('code');
-  const code     = normalizeFamilyCode(urlCode || localStorage.getItem(KEY_CODE) || '');
-
-  if (code) {
-    // Strip the code from the address bar so it doesn't linger visibly
-    if (urlCode) history.replaceState({}, '', location.pathname);
-    familyCode = code;
-    localStorage.setItem(KEY_CODE, code);
-    bootApp();
-    // Background Firestore sync (diary, custom songs, hidden songs)
-    connectFamily(code).catch(() => {
-      const dot = document.getElementById('sync-dot');
-      if (dot) dot.className = 'sync-dot offline';
-    });
-  } else {
-    refreshFilteredSongs();
-    document.getElementById('modal-code').classList.remove('hidden');
-  }
+  bootApp();
+  connectChild().catch(() => setSyncing(false, true));
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

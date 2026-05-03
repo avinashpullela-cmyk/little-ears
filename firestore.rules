@@ -2,9 +2,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /families/{familyCode} {
-      allow read: if isValidFamilyCode(familyCode);
-      allow write: if isValidFamilyCode(familyCode)
+    match /families/{familyId}/children/{childId} {
+      allow read: if familyId == 'little-ears-shared' && isValidChild(childId);
+      allow write: if familyId == 'little-ears-shared'
+        && isValidChild(childId)
         && request.resource.data.keys().hasOnly(['diary', 'customSongs', 'hiddenSongs', 'birthDate'])
         && validDiary(request.resource.data.diary)
         && validCustomSongs(request.resource.data.customSongs)
@@ -12,8 +13,8 @@ service cloud.firestore {
         && validBirthDate(request.resource.data.birthDate);
     }
 
-    function isValidFamilyCode(code) {
-      return code.matches('^[a-z0-9-]{3,48}$');
+    function isValidChild(childId) {
+      return childId in ['aadritha', 'aanya'];
     }
 
     function validBirthDate(value) {
