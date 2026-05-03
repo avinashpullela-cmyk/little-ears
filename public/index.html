@@ -1031,23 +1031,23 @@ const CHILDREN = {
     photo: 'photos/aadritha.jpg',
     heroEmojis: ['✨','👑','🎀','💖'],
     milestones: [
-      { icon:'🌟', label:'Birth', date:'2025-01-14' },
-      { icon:'😊', label:'First smile I saw', date:'2025-01-23' },
-      { icon:'🎊', label:'Uyyala Function', date:'2025-01-25' },
-      { icon:'📸', label:'First Photoshoot', date:'2025-01-26' },
-      { icon:'💪', label:'First Tummy time', date:'2025-01-29' },
-      { icon:'💉', label:'First Vaccine', date:'2025-03-17' },
-      { icon:'🌿', label:'First Ugadi', date:'2025-03-30' },
-      { icon:'😄', label:'First giggles', date:'2025-04-01' },
-      { icon:'🛒', label:'First time in stroller', date:'2025-04-25' },
-      { icon:'🏬', label:'First visit to a shop (Walmart)', date:'2025-05-04' },
-      { icon:'🌳', label:'First park visit', date:'2025-05-19' },
-      { icon:'💉', label:'Second Vaccine', date:'2025-05-20' },
-      { icon:'🍚', label:'Annaprasana', date:'2025-06-05' },
-      { icon:'💉', label:'Third Vaccine', date:'2025-07-22' },
-      { icon:'🔄', label:'Borlapadina Roju', date:'2025-07-27' },
-      { icon:'💉', label:'Fourth vaccine', date:'2026-01-15' },
-      { icon:'🐾', label:'First time Crawling', date:'2026-04-08' },
+      { icon:'🌟', label:'Birth', date:'2025-01-14', displayDate:'14-Jan-2025' },
+      { icon:'😊', label:'First smile i saw', date:'2025-01-23', displayDate:'23-Jan 2025' },
+      { icon:'🎊', label:'Uyyala Function', date:'2025-01-25', displayDate:'25-Jan 2025' },
+      { icon:'📸', label:'First Photoshoot', date:'2025-01-26', displayDate:'26-Jan 2025' },
+      { icon:'💪', label:'First Tummy time', date:'2025-01-29', displayDate:'29-Jan 2025' },
+      { icon:'💉', label:'First Vaccine', date:'2025-03-17', displayDate:'17-Mar 2025' },
+      { icon:'🌿', label:'First Ugadi', date:'2025-03-30', displayDate:'30-Mar 2025' },
+      { icon:'😄', label:'First giggles', date:'2025-04-01', displayDate:'01-April-2025' },
+      { icon:'🛒', label:'First time in stroller', date:'2025-04-25', displayDate:'25-April-2025' },
+      { icon:'🏬', label:'First visit to a shop ( walmart)', date:'2025-05-04', displayDate:'04-May-2025' },
+      { icon:'🌳', label:'First park visit', date:'2025-05-19', displayDate:'19-May-2025' },
+      { icon:'💉', label:'Second Vaccine', date:'2025-05-20', displayDate:'20-May-2025' },
+      { icon:'🍚', label:'Annaprasana', date:'2025-06-05', displayDate:'05-June-2025' },
+      { icon:'💉', label:'Third Vaccine', date:'2025-07-22', displayDate:'22-July-2025' },
+      { icon:'🔄', label:'Borlapadina Roju', date:'2025-07-27', displayDate:'27-July-2025' },
+      { icon:'💉', label:'Fourth vaccine', date:'2026-01-15', displayDate:'15-Jan-26' },
+      { icon:'🐾', label:'First time Crawling', date:'2026-04-08', displayDate:'8-Apr-26' },
     ],
     songs: [
       { id:'9PhtxqKLvVc', title:'The Happy Song',               artist:'Imogen Heap',          cat:'english'  },
@@ -2099,7 +2099,7 @@ function renderMilestonePanel() {
     ? `<div class="milestone-river">${milestones.map(m => `<article class="milestone-stone">
         <div class="milestone-dot">${escapeHtml(m.icon || '✨')}</div>
         <div class="milestone-age">${escapeHtml(milestoneAgeLabel(m.date))}</div>
-        <div class="milestone-date">${escapeHtml(formatDate(m.date))}</div>
+        <div class="milestone-date">${escapeHtml(m.displayDate || formatDate(m.date))}</div>
         <div class="milestone-copy">${escapeHtml(m.label || '')}</div>
       </article>`).join('')}</div>`
     : `<p class="milestone-empty">Aadritha's milestone path is ready for firsts, favorites, dances, words, trips, and family memories.</p>`;
