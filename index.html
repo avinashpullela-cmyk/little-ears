@@ -99,6 +99,7 @@
       font-size: 15px; color: var(--text); outline: none;
       background: #fff; appearance: none;
     }
+    textarea.modal-input { min-height: 96px; resize: vertical; line-height: 1.45; }
     .modal-input:focus, .modal-select:focus { border-color: var(--primary); }
     .modal-hint { font-size: 11px; color: var(--text-lt); margin-top: 5px; line-height: 1.5; }
 
@@ -817,18 +818,19 @@
     <div style="text-align:center;margin-bottom:20px">
       <div class="modal-icon">📅</div>
       <h2>Log a past memory</h2>
-      <p>Record a song she loved at a specific time — her age is worked out automatically from the date.</p>
+      <p>Record a song she loved, or capture a standalone family memory by picturing the moment in words.</p>
     </div>
 
     <div class="form-group">
-      <label class="form-label">Song <span>*</span></label>
+      <label class="form-label">Song (optional)</label>
       <div class="picker-wrap">
         <input id="memory-song-search" class="modal-input" type="text"
-               placeholder="Type to search songs…" autocomplete="off"
+               placeholder="Type to search songs, or leave blank…" autocomplete="off"
                oninput="onMemorySongSearch(this.value)"
                onfocus="onMemorySongSearch(this.value)">
         <div id="memory-picker-dropdown" class="picker-dropdown hidden"></div>
       </div>
+      <p class="modal-hint">Use this only when the memory is tied to a specific song.</p>
     </div>
 
     <div class="form-group">
@@ -839,9 +841,10 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Note (optional)</label>
-      <input id="memory-note" class="modal-input" type="text"
-             placeholder="e.g. She danced to this at grandma's house">
+      <label class="form-label">Picture the memory</label>
+      <textarea id="memory-note" class="modal-input"
+                placeholder="e.g. She was sitting near the window, clapping and smiling while everyone sang around her."></textarea>
+      <p class="modal-hint">Required if no song is selected. Describe the scene, place, people, sounds, or tiny detail you want everyone to remember.</p>
     </div>
 
     <div class="modal-err" id="memory-err"></div>
@@ -1019,8 +1022,8 @@ const CATEGORIES = [
   { id:'dance',    label:'⚡  Dance & Action'   },
   { id:'bedtime',  label:'🌙  Bedtime'          },
 ];
-const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️', disney:'🏰', learning:'🔤', dance:'⚡', bedtime:'🌙' };
-const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish', disney:'Disney/Movie', learning:'Learning', dance:'Dance/Action', bedtime:'Bedtime' };
+const CAT_EMOJI = { english:'🎀', indian:'🪔', african:'🌿', japanese:'🌸', spanish:'🌺', celtic:'☘️', disney:'🏰', learning:'🔤', dance:'⚡', bedtime:'🌙', memory:'🖼️' };
+const CAT_LABEL = { english:'Nursery Rhymes', indian:'Indian Classical', african:'African', japanese:'Japanese', spanish:'Spanish/Latin', celtic:'Celtic/Irish', disney:'Disney/Movie', learning:'Learning', dance:'Dance/Action', bedtime:'Bedtime', memory:'Family Memory' };
 
 const CHILDREN = {
   aadritha: {
@@ -1438,8 +1441,15 @@ function closeMemoryModal() {
   document.getElementById('memory-picker-dropdown').classList.add('hidden');
 }
 
+function memorySongLabel(song) {
+  return song ? `${song.title} - ${song.artist}` : '';
+}
+
 function onMemorySongSearch(val) {
   const q        = val.trim().toLowerCase();
+  if (memorySelectedSong && val.trim() !== memorySongLabel(memorySelectedSong)) {
+    memorySelectedSong = null;
+  }
   const allSongs = getBaseSongs();
   const matches  = (q
     ? allSongs.filter(s =>
@@ -1468,7 +1478,7 @@ function selectMemorySong(idx) {
   const song = _pickerSongs[idx];
   if (!song) return;
   memorySelectedSong = song;
-  document.getElementById('memory-song-search').value = `${song.title} — ${song.artist}`;
+  document.getElementById('memory-song-search').value = memorySongLabel(song);
   document.getElementById('memory-picker-dropdown').classList.add('hidden');
   document.getElementById('memory-err').textContent = '';
 }
@@ -1489,25 +1499,31 @@ function submitLogMemory() {
   const note    = document.getElementById('memory-note').value.trim();
   const errEl   = document.getElementById('memory-err');
 
-  if (!memorySelectedSong) { errEl.textContent = 'Please select a song first.'; return; }
   if (!dateVal)             { errEl.textContent = 'Please pick a date.'; return; }
+  if (!memorySelectedSong && !note) {
+    errEl.textContent = 'Please select a song or picture the memory in words.';
+    return;
+  }
 
   const m = getAgeMonthsAt(dateVal);
   if (m === null) { errEl.textContent = 'Date is before her birth date — please pick a later date.'; return; }
 
   const song    = memorySelectedSong;
   let entries   = getDiary();
-  const exists  = entries.some(e => e.songId === song.id && e.ageMonths === m);
-  if (exists) { errEl.textContent = 'This song is already in her diary for that age. Remove it there first if needed.'; return; }
+  if (song) {
+    const exists = entries.some(e => e.songId === song.id && e.ageMonths === m);
+    if (exists) { errEl.textContent = 'This song is already in her diary for that age. Remove it there first if needed.'; return; }
+  }
 
   entries.push({
-    songId:    song.id,
-    videoId:   getVideoId(song),
-    title:     song.title,
-    artist:    song.artist,
-    cat:       song.cat,
+    songId:    song ? song.id : `memory_${Date.now()}`,
+    videoId:   song ? getVideoId(song) : null,
+    title:     song ? song.title : 'Memory snapshot',
+    artist:    song ? song.artist : 'Family memory',
+    cat:       song ? song.cat : 'memory',
     note:      note || null,
-    isCustom:  song.isCustom || false,
+    isCustom:  song ? (song.isCustom || false) : false,
+    isMemoryOnly: !song,
     isRetro:   true,
     ageMonths: m,
     ageLabel:  ageLabel(m),
@@ -2127,8 +2143,8 @@ function renderDiaryView() {
       </div>
       <div class="diary-empty"><div class="diary-empty-icon">📖</div>
       <h3>The diary is empty</h3>
-      <p>Tap 🤍 on any song to save it to this child's diary.<br><br>
-      Her age is recorded automatically — you can look back at every musical milestone.</p></div>`;
+      <p>Tap 🤍 on any song, or log a past memory with a scene you want the family to remember.<br><br>
+      Her age is recorded automatically for every memory.</p></div>`;
     return;
   }
   const catCounts = {};
@@ -2145,7 +2161,7 @@ function renderDiaryView() {
 
   el.innerHTML = `
     <div class="diary-stats">
-      <div class="stat"><div class="stat-num">${entries.length}</div><div class="stat-lbl">songs loved</div></div>
+      <div class="stat"><div class="stat-num">${entries.length}</div><div class="stat-lbl">memories</div></div>
       <div class="stat-div"></div>
       <div class="stat"><div class="stat-num">${sorted.length}</div><div class="stat-lbl">milestone${sorted.length!==1?'s':''}</div></div>
       <div class="stat-div"></div>
@@ -2164,12 +2180,13 @@ function renderDiaryView() {
         <div class="diary-entries">
           ${g.entries.map(e => {
             const hasVid = !!e.videoId;
+            const isMemoryOnly = !!e.isMemoryOnly;
             return `<div class="diary-entry">
               <div class="diary-entry-icon">${escapeHtml(CAT_EMOJI[e.cat]||'🎵')}</div>
               <div class="diary-entry-info">
                 <div class="diary-entry-title">${escapeHtml(e.title)}</div>
-                <div class="diary-entry-artist">${escapeHtml(e.artist)}</div>
-                ${e.note ? `<div class="diary-entry-note">💬 ${escapeHtml(e.note)}</div>` : ''}
+                <div class="diary-entry-artist">${escapeHtml(e.artist || '')}</div>
+                ${e.note ? `<div class="diary-entry-note">${isMemoryOnly ? '🖼️' : '💬'} ${escapeHtml(e.note)}</div>` : ''}
                 ${e.isRetro ? `<span class="retro-badge">📅 Logged retroactively</span>` : ''}
                 <div class="diary-entry-date">Saved on ${formatDate(e.likedAt)}</div>
               </div>
