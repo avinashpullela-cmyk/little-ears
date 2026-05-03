@@ -102,6 +102,14 @@
     textarea.modal-input { min-height: 96px; resize: vertical; line-height: 1.45; }
     .modal-input:focus, .modal-select:focus { border-color: var(--primary); }
     .modal-hint { font-size: 11px; color: var(--text-lt); margin-top: 5px; line-height: 1.5; }
+    body.bedtime .modal-box { background: var(--surface); border: 1px solid var(--border); }
+    body.bedtime .modal-input,
+    body.bedtime .modal-select,
+    body.bedtime .picker-browse-btn,
+    body.bedtime .picker-dropdown {
+      background: #181c2f; color: var(--text); border-color: var(--border);
+    }
+    body.bedtime .picker-item:hover { background: #303959; }
 
     .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
     .modal-btn {
@@ -555,23 +563,34 @@
     .log-memory-btn:hover, .export-diary-btn:hover { opacity: .85; }
 
     .weekly-moment {
-      background: #fff; border-radius: var(--radius); padding: 16px;
-      box-shadow: var(--shadow); margin-bottom: 18px; border: 2px solid rgba(129,178,154,.28);
+      position: relative; overflow: hidden; background: #fffdf8;
+      border-radius: 16px; padding: 18px; box-shadow: 0 14px 34px rgba(61,64,91,.12);
+      margin-bottom: 18px; border: 2px solid #f2d4a8;
+    }
+    .weekly-moment::before {
+      content: ""; position: absolute; inset: 0 0 auto 0; height: 6px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
     }
     .weekly-moment-head {
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-      margin-bottom: 12px;
+      display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: center;
+      margin-bottom: 14px;
     }
-    .weekly-moment-title { font-size: 16px; font-weight: 800; color: var(--text); }
-    .weekly-moment-subtitle { font-size: 12px; color: var(--text-lt); margin-top: 3px; line-height: 1.45; }
+    .weekly-moment-icon {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: #f7e7c8; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; box-shadow: inset 0 0 0 2px rgba(244,162,97,.16);
+    }
+    .weekly-moment-title { font-size: 17px; font-weight: 900; color: var(--text); }
+    .weekly-moment-subtitle { font-size: 12px; color: var(--text-lt); margin-top: 4px; line-height: 1.45; }
     .weekly-moment-form {
       display: grid; grid-template-columns: minmax(132px, 170px) 1fr auto;
-      gap: 10px; align-items: stretch;
+      gap: 10px; align-items: stretch; background: rgba(255,255,255,.68);
+      border: 1px solid rgba(224,122,95,.16); border-radius: 14px; padding: 10px;
     }
     .weekly-moment-date,
     .weekly-moment-input {
-      width: 100%; border: 2px solid var(--border); border-radius: 12px;
-      background: var(--surface); color: var(--text); outline: none;
+      width: 100%; border: 2px solid transparent; border-radius: 12px;
+      background: #fff; color: var(--text); outline: none;
       font-size: 14px; padding: 10px 12px;
     }
     .weekly-moment-input { min-height: 44px; resize: vertical; line-height: 1.4; }
@@ -579,12 +598,23 @@
     .weekly-moment-input:focus { border-color: var(--secondary); background: #fff; }
     .weekly-moment-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      background: var(--secondary); color: #fff; border: none; border-radius: 12px;
+      background: var(--primary); color: #fff; border: none; border-radius: 12px;
       padding: 0 16px; font-size: 13px; font-weight: 800; cursor: pointer;
       min-height: 44px; white-space: nowrap;
     }
-    .weekly-moment-btn:hover { opacity: .88; }
+    .weekly-moment-btn:hover { background: var(--secondary); }
     .weekly-moment-err { font-size: 12px; color: #e63946; min-height: 16px; margin-top: 8px; }
+    body.bedtime .weekly-moment {
+      background: var(--surface); border-color: #6f7eb5; box-shadow: none;
+    }
+    body.bedtime .weekly-moment-icon { background: #303959; color: var(--primary-lt); }
+    body.bedtime .weekly-moment-form {
+      background: rgba(24,28,47,.6); border-color: var(--border);
+    }
+    body.bedtime .weekly-moment-date,
+    body.bedtime .weekly-moment-input {
+      background: #181c2f; color: var(--text); border-color: var(--border);
+    }
 
     /* ── Retro badge on diary entries ── */
     .retro-badge {
@@ -595,6 +625,13 @@
 
     /* ── Song picker dropdown (inside Log Memory modal) ── */
     .picker-wrap { position: relative; }
+    .picker-input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .picker-browse-btn {
+      border: 2px solid var(--border); border-radius: 12px; background: #fff;
+      color: var(--primary); font-size: 12px; font-weight: 800; padding: 0 12px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .picker-browse-btn:hover { border-color: var(--primary-lt); background: #fff8f5; }
     .picker-dropdown {
       position: absolute; top: calc(100% + 4px); left: 0; right: 0;
       background: #fff; border: 2px solid var(--border); border-radius: 14px;
@@ -698,6 +735,7 @@
       .section-actions { flex-wrap: wrap; justify-content: flex-end; }
       .diary-stats { padding: 16px 12px; }
       .weekly-moment-form { grid-template-columns: 1fr; }
+      .picker-input-row { grid-template-columns: 1fr; }
       .weekly-moment-btn { width: 100%; }
       .stat-num { font-size: 22px; }
       .diary-entry { align-items: flex-start; }
@@ -858,10 +896,12 @@
     <div class="form-group">
       <label class="form-label">Song (optional)</label>
       <div class="picker-wrap">
-        <input id="memory-song-search" class="modal-input" type="text"
-               placeholder="Type to search songs, or leave blank…" autocomplete="off"
-               oninput="onMemorySongSearch(this.value)"
-               onfocus="onMemorySongSearch(this.value)">
+        <div class="picker-input-row">
+          <input id="memory-song-search" class="modal-input" type="text"
+                 placeholder="Type to search songs, or leave blank…" autocomplete="off"
+                 oninput="onMemorySongSearch(this.value)">
+          <button type="button" class="picker-browse-btn" onclick="showMemorySongPicker()">Browse songs</button>
+        </div>
         <div id="memory-picker-dropdown" class="picker-dropdown hidden"></div>
       </div>
       <p class="modal-hint">Use this only when the memory is tied to a specific song.</p>
@@ -925,6 +965,7 @@
 
   <div class="weekly-moment" id="weekly-moment-panel">
     <div class="weekly-moment-head">
+      <div class="weekly-moment-icon">⭐</div>
       <div>
         <div class="weekly-moment-title" id="weekly-moment-title">Best moment of the week with Aadritha</div>
         <div class="weekly-moment-subtitle">Add a tiny highlight from this week. It will appear in the Music Diary with the date.</div>
@@ -1482,7 +1523,7 @@ function openMemoryModal() {
   document.getElementById('memory-date').max = new Date().toISOString().split('T')[0];
   onMemoryDateChange(document.getElementById('memory-date').value);
   document.getElementById('modal-memory').classList.remove('hidden');
-  setTimeout(() => document.getElementById('memory-song-search').focus(), 100);
+  setTimeout(() => document.getElementById('memory-note').focus(), 100);
 }
 
 function closeMemoryModal() {
@@ -1494,24 +1535,11 @@ function memorySongLabel(song) {
   return song ? `${song.title} - ${song.artist}` : '';
 }
 
-function onMemorySongSearch(val) {
-  const q        = val.trim().toLowerCase();
-  if (memorySelectedSong && val.trim() !== memorySongLabel(memorySelectedSong)) {
-    memorySelectedSong = null;
-  }
-  const allSongs = getBaseSongs();
-  const matches  = (q
-    ? allSongs.filter(s =>
-        s.title.toLowerCase().includes(q)  ||
-        s.artist.toLowerCase().includes(q) ||
-        (CAT_LABEL[s.cat] || '').toLowerCase().includes(q))
-    : allSongs
-  ).slice(0, 25);
-  _pickerSongs = matches;
-
+function renderMemorySongPicker(matches) {
+  _pickerSongs = matches.slice(0, 25);
   const dd = document.getElementById('memory-picker-dropdown');
-  dd.innerHTML = matches.length
-    ? matches.map((s, i) => `
+  dd.innerHTML = _pickerSongs.length
+    ? _pickerSongs.map((s, i) => `
         <div class="picker-item" onmousedown="selectMemorySong(${i})">
           <span class="picker-cat">${escapeHtml(CAT_EMOJI[s.cat] || '🎵')}</span>
           <div>
@@ -1521,6 +1549,29 @@ function onMemorySongSearch(val) {
         </div>`).join('')
     : '<div class="picker-empty">No songs found</div>';
   dd.classList.remove('hidden');
+}
+
+function showMemorySongPicker() {
+  renderMemorySongPicker(getBaseSongs());
+  document.getElementById('memory-song-search').focus();
+}
+
+function onMemorySongSearch(val) {
+  const q        = val.trim().toLowerCase();
+  if (memorySelectedSong && val.trim() !== memorySongLabel(memorySelectedSong)) {
+    memorySelectedSong = null;
+  }
+  if (!q) {
+    _pickerSongs = [];
+    document.getElementById('memory-picker-dropdown').classList.add('hidden');
+    return;
+  }
+  const allSongs = getBaseSongs();
+  const matches  = allSongs.filter(s =>
+    s.title.toLowerCase().includes(q)  ||
+    s.artist.toLowerCase().includes(q) ||
+    (CAT_LABEL[s.cat] || '').toLowerCase().includes(q));
+  renderMemorySongPicker(matches);
 }
 
 function selectMemorySong(idx) {
