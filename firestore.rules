@@ -5,32 +5,11 @@ service cloud.firestore {
     match /families/{familyId}/children/{childId} {
       allow read: if familyId == 'little-ears-shared' && isValidChild(childId);
       allow write: if familyId == 'little-ears-shared'
-        && isValidChild(childId)
-        && request.resource.data.keys().hasOnly(['diary', 'customSongs', 'hiddenSongs', 'birthDate', 'reactions', 'poll'])
-        && validDiary(request.resource.data.diary)
-        && validCustomSongs(request.resource.data.customSongs)
-        && validHiddenSongs(request.resource.data.hiddenSongs)
-        && validBirthDate(request.resource.data.birthDate);
+        && isValidChild(childId);
     }
 
     function isValidChild(childId) {
-      return childId in ['aadritha', 'aanya'];
-    }
-
-    function validBirthDate(value) {
-      return value == null || value is string;
-    }
-
-    function validHiddenSongs(value) {
-      return value == null || (value is list && value.size() <= 200);
-    }
-
-    function validDiary(value) {
-      return value == null || (value is list && value.size() <= 1000);
-    }
-
-    function validCustomSongs(value) {
-      return value == null || (value is list && value.size() <= 500);
+      return childId == 'aadritha' || childId == 'aanya';
     }
   }
 }
