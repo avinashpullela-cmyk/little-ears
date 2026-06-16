@@ -1948,9 +1948,27 @@ async function searchYouTube() {
   try {
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&videoCategoryId=10&q=${encodeURIComponent(query + ' kids')}&key=${YT_API_KEY}`;
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`API error ${resp.status}`);
-    const data = await resp.json();
 
+    if (!resp.ok) {
+      let msg = 'Could not reach YouTube. Check your connection and try again.';
+      try {
+        const errData = await resp.json();
+        const reason  = ((errData.error || {}).errors || [])[0] || {};
+        if (reason.reason === 'accessNotConfigured' || reason.reason === 'forbidden') {
+          msg = 'YouTube Data API is not enabled yet. Ask Avinash to enable it in Google Cloud Console for the little-ears project.';
+        } else if (reason.reason === 'quotaExceeded' || reason.reason === 'dailyLimitExceeded') {
+          msg = 'YouTube search quota reached for today. You can still paste a YouTube URL below.';
+        } else if (resp.status === 400) {
+          msg = 'Bad request — try simplifying your search keywords.';
+        } else {
+          msg = `YouTube API error: ${reason.message || reason.reason || resp.status}. You can paste a URL below instead.`;
+        }
+      } catch {}
+      resBox.innerHTML = `<div class="yt-search-status">${escapeHtml(msg)}</div>`;
+      return;
+    }
+
+    const data = await resp.json();
     _ytSearchResults = (data.items || []).map(item => ({
       videoId:   item.id.videoId,
       title:     item.snippet.title,
@@ -1964,12 +1982,7 @@ async function searchYouTube() {
       renderYtResults();
     }
   } catch (err) {
-    const isQuota = String(err).includes('403');
-    resBox.innerHTML = `<div class="yt-search-status">${
-      isQuota
-        ? 'YouTube search quota reached for today. You can still paste a YouTube URL below.'
-        : 'Could not reach YouTube. Check your connection and try again.'
-    }</div>`;
+    resBox.innerHTML = '<div class="yt-search-status">Could not reach YouTube. Check your connection and try again.</div>';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Search';
