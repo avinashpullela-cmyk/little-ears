@@ -241,15 +241,10 @@
     }
     /* Per-child framing — keep faces in view after circular crop */
     .child-hero[data-child="aadritha"] .child-hero-photo { object-position: 50% 30%; }
-    .child-hero[data-child="aanya"]    .child-hero-photo { object-position: 68% 45%; }
     /* Per-child ring palettes */
     .child-hero[data-child="aadritha"] .child-hero-ring {
       background: conic-gradient(from 0deg,
         #ffb6d5, #ffd6e7, #fff0c2, #ffc8a8, #f7a8c9, #ffb6d5);
-    }
-    .child-hero[data-child="aanya"] .child-hero-ring {
-      background: conic-gradient(from 0deg,
-        #9be7a3, #ffd66b, #ff8b8b, #7ed6ff, #c79bff, #9be7a3);
     }
     body.bedtime .child-hero-ring { box-shadow: 0 8px 22px rgba(0,0,0,.4); }
     body.bedtime .child-hero-name { color: #e9ecf3; }
@@ -988,11 +983,6 @@
 
 <div class="main">
 
-  <div class="child-switcher" id="child-switcher">
-    <button class="child-btn active" id="child-aadritha" onclick="setChild('aadritha')">Aadritha<span class="child-subtitle">Toddler songs</span></button>
-    <button class="child-btn" id="child-aanya" onclick="setChild('aanya')">Aanya<span class="child-subtitle">4.5 year old songs</span></button>
-  </div>
-
   <div class="child-hero" id="child-hero" data-child="aadritha">
     <div class="child-hero-ring-wrap">
       <div class="child-hero-ring">
@@ -1212,37 +1202,6 @@ const CHILDREN = {
       { id:'Rb0UmrCXxVA', title:'Symphony No. 40 (Instrumental)', artist:'Wolfgang Amadeus Mozart', cat:'learning' },
       { id:'kSE15tLBdso', title:'Eine kleine Nachtmusik (Instrumental)', artist:'Wolfgang Amadeus Mozart', cat:'learning' },
     ]
-  },
-  aanya: {
-    name: 'Aanya',
-    subtitle: '4.5 year old songs',
-    birthDate: '2021-09-30',
-    tagline: 'Sing, dance, and learn with Aanya',
-    photo: 'photos/aanya.jpg',
-    heroEmojis: ['🍓','🌿','☀️','🌸'],
-    milestones: [],
-    songs: [
-      { id:'L0MK7qz13bU', title:'Let It Go',                    artist:'Frozen',                 cat:'disney'   },
-      { id:'YVVTZgwYwVo', title:"How Far I'll Go",              artist:'Moana',                  cat:'disney'   },
-      { id:'79DijItQXMM', title:"You're Welcome",               artist:'Moana',                  cat:'disney'   },
-      { id:'ru0K8uYEZWw', title:"Can't Stop the Feeling!",      artist:'Trolls',                 cat:'dance'    },
-      { id:'gVfgTw_W_JY', title:'The Goldfish',                  artist:'The Laurie Berkner Band',cat:'dance'    },
-      { id:'ymigWt5TOV8', title:'We Are The Dinosaurs',          artist:'The Laurie Berkner Band',cat:'dance'    },
-      { id:'388Q44ReOWE', title:'Shake Your Sillies Out',        artist:'Raffi',                   cat:'dance'    },
-      { id:'hft6uJQIF4g', title:'Down by the Bay',               artist:'Raffi',                   cat:'english'  },
-      { id:'3tx0rvuXIRg', title:'Bananaphone',                   artist:'Raffi',                   cat:'english'  },
-      { id:'71hqRT9U0wg', title:'Apples and Bananas',            artist:'Super Simple Songs',      cat:'learning' },
-      { id:'BELlZKpi1Zs', title:'The Alphabet Song',             artist:'Super Simple Songs',      cat:'learning' },
-      { id:'rD6FRDd9Hew', title:'Open Shut Them',                artist:'Super Simple Songs',      cat:'dance'    },
-      { id:'fN1Cyr0ZK9M', title:'The Pinocchio',                 artist:'Super Simple Songs',      cat:'dance'    },
-      { id:'frN3nvhIHUk', title:'Skidamarink',                   artist:'Super Simple Songs',      cat:'bedtime'  },
-      { id:'yCjJyiqpAuU', title:'Twinkle Twinkle Little Star',   artist:'Super Simple Songs',      cat:'bedtime'  },
-      { id:'RuqvGiZi0qg', title:'Here Comes the Sun',            artist:'The Beatles',             cat:'bedtime'  },
-      { id:'1gUbdNbu6ak', title:'Try Everything',                artist:'Shakira / Zootopia',      cat:'disney'   },
-      { id:'k85mRPqvMbE', title:'Hakuna Matata',                 artist:'The Lion King',           cat:'disney'   },
-      { id:'Pjw2A3QU8Qg', title:'Bare Necessities',              artist:'The Jungle Book',         cat:'disney'   },
-      { id:'2Vv-BfVoq4g', title:'Perfect',                       artist:'Ed Sheeran',              cat:'bedtime'  },
-    ]
   }
 };
 
@@ -1262,7 +1221,9 @@ const KEY_WEEKLY_MODEL = 'le_weekly_model';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
-let activeChildId = localStorage.getItem(KEY_CHILD) || 'aadritha';
+const storedChildId = localStorage.getItem(KEY_CHILD);
+let activeChildId = CHILDREN[storedChildId] ? storedChildId : 'aadritha';
+if (activeChildId !== storedChildId) localStorage.setItem(KEY_CHILD, activeChildId);
 let unsubFirestore = null;
 let CUSTOM_SONGS   = [];
 let HIDDEN_SONGS   = [];    // IDs of static songs removed from the list
@@ -1546,11 +1507,6 @@ function applyQuickFilter(list) {
       sleepy: ['9PhtxqKLvVc','yCjJyiqpAuU','b8fb3BLMC1s','k03znbGf2vo','TnnKgdRQl3E','WHUCX5iy_zk'],
       dance: ['XqZsoesa55w','yWirdnSDsV4','-hqiivkU0fI','dHBT3NdO0mw','X_0V4_Wu6vk'],
       grandparents: ['guZR2_MS5ec','ITB8RvvbUrA','b8fb3BLMC1s','PyUkEF1dHW4']
-    },
-    aanya: {
-      sleepy: ['frN3nvhIHUk','yCjJyiqpAuU','RuqvGiZi0qg','2Vv-BfVoq4g'],
-      dance: ['ru0K8uYEZWw','gVfgTw_W_JY','ymigWt5TOV8','388Q44ReOWE','fN1Cyr0ZK9M'],
-      grandparents: ['hft6uJQIF4g','3tx0rvuXIRg','Pjw2A3QU8Qg','k85mRPqvMbE']
     }
   };
   const presets = presetsByChild[activeChildId] || presetsByChild.aadritha;
