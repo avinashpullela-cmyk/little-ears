@@ -456,6 +456,12 @@
     .milestone-date { font-size: 11px; color: var(--text-lt); margin-top: 2px; }
     .milestone-copy { font-size: 12px; color: var(--text); font-weight: 700; margin-top: 4px; line-height: 1.35; }
     .milestone-empty { font-size: 12px; color: var(--text-lt); line-height: 1.55; }
+    .milestone-add-btn {
+      border: none; border-radius: 999px; background: var(--primary); color: #fff;
+      padding: 8px 13px; font-size: 12px; font-weight: 800; cursor: pointer;
+      white-space: nowrap;
+    }
+    .milestone-add-btn:hover { background: var(--secondary); }
 
     /* ── Song list ── */
     .song-list { display: flex; flex-direction: column; gap: 6px; }
@@ -912,6 +918,40 @@
   </div>
 </div>
 
+<!-- ── Modal: Add Milestone ───────────────────────────────────── -->
+<div id="modal-milestone" class="modal-overlay hidden">
+  <div class="modal-box left">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="modal-icon">🌱</div>
+      <h2>Add a milestone</h2>
+      <p>Add a first, favorite, trip, word, tiny victory, or family memory to Aadritha's garden.</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Milestone <span>*</span></label>
+      <input id="milestone-label" class="modal-input" type="text" placeholder="e.g. First word">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date <span>*</span></label>
+      <input id="milestone-date" class="modal-input" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Icon (optional)</label>
+      <input id="milestone-icon" class="modal-input" type="text" maxlength="4" placeholder="e.g. ⭐">
+      <p class="modal-hint">Use one emoji, or leave blank and the garden will use ✨.</p>
+    </div>
+
+    <div class="modal-err" id="milestone-err"></div>
+
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeMilestoneModal()">Cancel</button>
+      <button class="modal-btn" onclick="submitMilestone()">Add milestone</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Modal: Confirm ─────────────────────────────────────────── -->
 <div id="modal-confirm" class="modal-overlay hidden">
   <div class="modal-box">
@@ -1218,6 +1258,7 @@ const KEY_PLAYS = 'le_play_counts';
 const KEY_REACTIONS = 'le_song_reactions';
 const KEY_POLL = 'le_song_poll';
 const KEY_WEEKLY_MODEL = 'le_weekly_model';
+const KEY_MILESTONES = 'le_custom_milestones';
 
 // ─── App State ────────────────────────────────────────────────────────────────
 
@@ -1249,6 +1290,7 @@ let playCounts = {};
 let songReactions = {};
 let songPoll = null;
 let weeklyModel = null;
+let CUSTOM_MILESTONES = [];
 
 // ─── Song helpers ────────────────────────────────────────────────────────────
 
@@ -1270,6 +1312,17 @@ function getStaticSongs() {
 
 function getBaseSongs() {
   return [...getStaticSongs(), ...CUSTOM_SONGS];
+}
+
+function getAllMilestones() {
+  return [...(currentChild().milestones || []), ...(CUSTOM_MILESTONES || [])]
+    .filter(m => m && m.date && m.label)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function saveCustomMilestones() {
+  localStorage.setItem(storageKey(KEY_MILESTONES), JSON.stringify(CUSTOM_MILESTONES));
+  syncWrite(childDoc().set({ customMilestones: CUSTOM_MILESTONES }, { merge: true }), 'Milestones synced');
 }
 
 function weekStartIso(date = new Date()) {
@@ -2081,6 +2134,7 @@ function loadChildLocalState() {
   migrateLegacyDiaryIfNeeded();
   try { CUSTOM_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_CUSTOM)) || '[]'); } catch { CUSTOM_SONGS  = []; }
   try { HIDDEN_SONGS  = JSON.parse(localStorage.getItem(storageKey(KEY_HIDDEN)) || '[]'); } catch { HIDDEN_SONGS  = []; }
+  try { CUSTOM_MILESTONES = JSON.parse(localStorage.getItem(storageKey(KEY_MILESTONES)) || '[]'); } catch { CUSTOM_MILESTONES = []; }
   playCounts = getPlayCounts();
   songReactions = getSongReactions();
   weeklyModel = getWeeklyModel();
@@ -2102,6 +2156,10 @@ async function connectChild() {
     if (d.hiddenSongs) {
       HIDDEN_SONGS = d.hiddenSongs;
       localStorage.setItem(storageKey(KEY_HIDDEN), JSON.stringify(HIDDEN_SONGS));
+    }
+    if (d.customMilestones) {
+      CUSTOM_MILESTONES = d.customMilestones;
+      localStorage.setItem(storageKey(KEY_MILESTONES), JSON.stringify(CUSTOM_MILESTONES));
     }
     if (d.reactions) {
       songReactions = d.reactions;
@@ -2136,6 +2194,11 @@ async function connectChild() {
       refreshFilteredSongs();
       renderCategories();
       needsRender = true;
+    }
+    if (d.customMilestones !== undefined) {
+      CUSTOM_MILESTONES = d.customMilestones || [];
+      localStorage.setItem(storageKey(KEY_MILESTONES), JSON.stringify(CUSTOM_MILESTONES));
+      renderMilestonePanel();
     }
     if (d.reactions !== undefined) {
       songReactions = d.reactions || {};
@@ -2376,11 +2439,55 @@ function milestoneAgeLabel(dateStr) {
   return ageLabel(months);
 }
 
+function openMilestoneModal() {
+  if (activeChildId !== 'aadritha') return;
+  document.getElementById('milestone-label').value = '';
+  document.getElementById('milestone-date').value = todayIso();
+  document.getElementById('milestone-date').min = getBirthDate();
+  document.getElementById('milestone-date').max = todayIso();
+  document.getElementById('milestone-icon').value = '';
+  document.getElementById('milestone-err').textContent = '';
+  document.getElementById('modal-milestone').classList.remove('hidden');
+  setTimeout(() => document.getElementById('milestone-label').focus(), 100);
+}
+
+function closeMilestoneModal() {
+  document.getElementById('modal-milestone').classList.add('hidden');
+}
+
+function submitMilestone() {
+  const label = document.getElementById('milestone-label').value.trim();
+  const dateVal = document.getElementById('milestone-date').value;
+  const icon = document.getElementById('milestone-icon').value.trim();
+  const errEl = document.getElementById('milestone-err');
+
+  errEl.textContent = '';
+  if (!label) { errEl.textContent = 'Please enter the milestone.'; return; }
+  if (!dateVal) { errEl.textContent = 'Please pick the milestone date.'; return; }
+  if (getAgeMonthsAt(dateVal) === null) {
+    errEl.textContent = 'Date is before Aadritha was born — please pick a later date.';
+    return;
+  }
+
+  CUSTOM_MILESTONES.push({
+    id: `milestone_${Date.now()}`,
+    icon: icon || '✨',
+    label,
+    date: dateVal,
+    displayDate: formatDate(dateVal),
+    createdAt: new Date().toISOString()
+  });
+  saveCustomMilestones();
+  closeMilestoneModal();
+  renderMilestonePanel();
+  showToast('Milestone added to the garden', 'success');
+}
+
 function renderMilestonePanel() {
   const el = document.getElementById('milestone-panel');
   if (!el) return;
   if (activeChildId !== 'aadritha') { el.innerHTML = ''; return; }
-  const milestones = currentChild().milestones || [];
+  const milestones = getAllMilestones();
   const content = milestones.length
     ? `<div class="milestone-river">${milestones.map(m => `<article class="milestone-stone">
         <div class="milestone-dot">${escapeHtml(m.icon || '✨')}</div>
@@ -2395,6 +2502,7 @@ function renderMilestonePanel() {
         <div class="milestone-title">🌱 Aadritha's milestone garden</div>
         <div class="milestone-subtitle">A playful path of firsts and family memories.</div>
       </div>
+      <button class="milestone-add-btn" onclick="openMilestoneModal()">＋ Add milestone</button>
     </div>
     ${content}
   </section>`;
